@@ -2,9 +2,31 @@ const express = require('express');
 const http = require('http');
 const socketio = require('socket.io');
 const cors = require('cors');
+const dotenv = require("dotenv");
 const app = express();
 const server = http.createServer(app);
+const runMigration = require("./models/index");
+const db = require("./config/db");
 
+app.use(express.json());
+app.use(cors());
+
+//ENV
+dotenv.config();
+//Set TimeZone
+process.env.TZ = 'Africa/Accra';
+
+//Create database tables
+(async () => {
+    db.raw("SET FOREIGN_KEY_CHECKS=0");
+    await runMigration();
+    db.raw("SET FOREIGN_KEY_CHECKS=1");
+})()
+
+
+const port = process.env.port || 3000;
+
+//Socket instance
 const io = socketio(server, {
     cors: {
         origin: "*",
@@ -12,9 +34,8 @@ const io = socketio(server, {
     }
 });
 
-const port = process.env.port || 3000;
 
-
+//Socket.io Connection
 io.on('connection', (socket) => {
 
     //Broadcast number of users
@@ -33,8 +54,25 @@ io.on('connection', (socket) => {
 
 })
 
+//Load routes
+const lotteryRouter = require("./routes/lottery/index");
+const userRouter = require("./routes/users/index");
+
+//Use Routes
+app.use("/lottery", lotteryRouter);
+app.use("/users", userRouter);
 
 
-server.listen(port, ()=> {
+//Handle errors
+app.use((err, req, res, next) => {
+    if(err){
+        console.log(err);
+        res.status(400).send("Sorry and error occurred");
+    }
+    next()
+})
+
+
+server.listen(port, () => {
     console.log(`server running on port ${port}`);
 })

@@ -1,4 +1,12 @@
-import express from "express";
+const express = require("express");
 const router = express.Router();
 
-router.get();
+const lotteryController = require("../../controllers/lottery/index");
+
+// router.get("/", );
+
+router.post("/stake", lotteryController.stake);
+
+
+
+module.exports = router;
