@@ -18,14 +18,14 @@ const User = async () => {
         });
 
         // insert User if none exists
-        await db('users').insert(
-            {
-                firstName: "Appiah",
-                phone: 242740320,
-                networkType: 'mtn',
-                password: "$2a$10$N9sVJn6Nwxtm.PUmbRXLzOFNZfRAjTjNK3EfFu2qRjpnNHQrCbd6i" //@LogMeIn
-            }
-        );
+        // await db('users').insert(
+        //     {
+        //         firstName: "Appiah",
+        //         phone: 242740320,
+        //         networkType: 'mtn',
+        //         password: "$2a$10$N9sVJn6Nwxtm.PUmbRXLzOFNZfRAjTjNK3EfFu2qRjpnNHQrCbd6i" //@LogMeIn
+        //     }
+        // );
 
     }
 
