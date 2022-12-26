@@ -12,17 +12,18 @@ const lotteryController = {
 
             const payable = stakeFunction(req.body.selectedNumbers.length, req.body.amountToStake );
 
-            const userId = "-1"
+
+            const userId = "-" + req.user.id
             const ticketId = Date.now().toString() + userId;
             const query = await db("tickets").insert({
-                userId: 1,
+                userId: req.user.id,
                 ticketId,
                 numbers: JSON.stringify(req.body.selectedNumbers),
                 day: new Date().getDay(),
                 amount: payable
             })
 
-            res.status(200).
+            res.status(201).
             send({message:
                     `Your Stake GHS${payable} Was Successful ${req.body.selectedNumbers} ticketId: ${ticketId} ${new Date()}`
             });

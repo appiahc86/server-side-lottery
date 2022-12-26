@@ -1,5 +1,7 @@
 const db = require("../../config/db");
 const bcrypt = require("bcrypt");
+const config = require("../../config/config");
+const jwt = require("jsonwebtoken");
 
 
 const userController = {
@@ -59,12 +61,13 @@ const userController = {
             }
 
             //Save to db
-            await db("users").insert({
+           const user = await db("users").insert({
                 phone: phoneNumber,
                 password: hash
             });
 
-            res.status(201).send({message: 'success'});
+           const token = jwt.sign({ id: user[0] }, config.JWT_SECRET);
+            res.status(201).send({token: token});
 
 
         }catch (e) {

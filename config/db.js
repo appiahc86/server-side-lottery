@@ -1,11 +1,13 @@
+const config = require("./config");
+
 const db = require('knex')({
     client: 'mysql',
     connection: {
-        host : '127.0.0.1',
+        host : config.DB_HOST,
         port : 3306,
-        user : 'root',
-        password : '',
-        database : 'nanty'
+        user : config.DB_USER,
+        password : config.DB_PASS,
+        database : config.DB_NAME
     }
 });
 

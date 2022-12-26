@@ -2,7 +2,6 @@ const express = require('express');
 const http = require('http');
 const socketio = require('socket.io');
 const cors = require('cors');
-const dotenv = require("dotenv");
 const app = express();
 const server = http.createServer(app);
 const runMigration = require("./models/index");
@@ -11,16 +10,14 @@ const db = require("./config/db");
 app.use(express.json());
 app.use(cors());
 
-//ENV
-dotenv.config();
 //Set TimeZone
 process.env.TZ = 'Africa/Accra';
 
 //Create database tables
 (async () => {
-    db.raw("SET FOREIGN_KEY_CHECKS=0");
+    await db.raw("SET FOREIGN_KEY_CHECKS=0");
     await runMigration();
-    db.raw("SET FOREIGN_KEY_CHECKS=1");
+    await db.raw("SET FOREIGN_KEY_CHECKS=1");
 })()
 
 
