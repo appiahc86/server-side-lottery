@@ -53,11 +53,13 @@ io.on('connection', (socket) => {
 
 //Load routes
 const lotteryRouter = require("./routes/lottery/index");
-const userRouter = require("./routes/users/index");
+const userAuthRouter = require("./routes/users/auth/userAuthRoutes");
+const usersIndexRouter = require("./routes/users/index");
 
 //Use Routes
 app.use("/lottery", lotteryRouter);
-app.use("/users", userRouter);
+app.use("/users", usersIndexRouter);
+app.use("/users/auth", userAuthRouter);
 
 
 //Handle errors

@@ -13,6 +13,7 @@ const Ticket = async () => {
             table.enum('ticketStatus', ['open', 'closed']).defaultTo('open');
             table.float('amount').notNullable();
             table.timestamp('createdAt').defaultTo(db.fn.now());
+            table.engine('InnoDB');
 
             table.foreign('userId').references('id').inTable('users').onDelete('CASCADE');
 

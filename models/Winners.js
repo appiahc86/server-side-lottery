@@ -9,6 +9,7 @@ const Winners = async () => {
             table.float('amountWon').notNullable();
             table.json('winningNumbers').notNullable();
             table.timestamp('createdAt').defaultTo(db.fn.now());
+            table.engine('InnoDB');
 
             table.foreign('id').references('id').inTable('tickets').onDelete('CASCADE');
 

@@ -8,13 +8,12 @@ const User = async () => {
             table.string('firstName', 20);
             table.string('lastName', 20);
             table.string('phone', 15).unique();
-            table.enum('networkType', ['mtn','vodafone','airtelTigo']);
-            table.float('balance').defaultTo(0);
+            table.double('balance').defaultTo(0);
             table.string('password').notNullable();
+            table.mediumint('specialCode').notNullable(); //will use in JWT compare
             table.boolean('isActive').defaultTo(true);
-            table.boolean('resetPassword').defaultTo(false);
-            table.datetime('tokenExp').nullable();
             table.timestamp('createdAt').defaultTo(db.fn.now());
+            table.engine('InnoDB');
         });
 
         // insert User if none exists
@@ -26,7 +25,6 @@ const User = async () => {
         //         password: "$2a$10$N9sVJn6Nwxtm.PUmbRXLzOFNZfRAjTjNK3EfFu2qRjpnNHQrCbd6i" //@LogMeIn
         //     }
         // );
-
     }
 
 

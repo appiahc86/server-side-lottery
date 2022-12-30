@@ -13,18 +13,22 @@ const auth = async (req, res, next) => {
         const decoded = jwt.verify(token, config.JWT_SECRET);
         const user = await db("users")
             .where({id: decoded.id})
-            .select("id", "firstName", "lastName", "phone", "balance")
+            .select("id", "firstName", "lastName", "phone",
+                "balance", "specialCode")
             .limit(1);
 
-        if (!user.length) {
+        //If user not found
+        if (!user.length)  return res.status(401).send("Please login");
+
+
+        //if special code does not match
+        if (parseInt(user[0].specialCode ) !== parseInt(decoded.specialCode))
             return res.status(401).send("Please login");
-        }
 
         req.token = token;
         req.user = user[0];
         next();
     }catch (e) {
-        console.log("JWT Auth Error");
         res.status(401).send("Please login");
     }
 }

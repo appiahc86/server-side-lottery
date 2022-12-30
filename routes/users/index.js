@@ -1,13 +1,11 @@
 const express = require("express");
 const router = express.Router();
 
-const usersController = require("../../controllers/users/index");
+const userIndexController = require("../../controllers/users/index");
+const auth = require("../../middleware/auth");
 
-//Register new user
-router.post("/register", usersController.create);
+router.get("/tickets", auth, userIndexController.viewTickets);
 
-//Verify Phone number
-router.post('/verify', usersController.verify);
 
 
 module.exports = router;

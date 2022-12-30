@@ -9,6 +9,7 @@ const MachineNumber = async () => {
             table.json('numbers').notNullable();
             table.boolean('closed')
             table.timestamp('createdAt').defaultTo(db.fn.now());
+            table.engine('InnoDB');
         });
 
     }
