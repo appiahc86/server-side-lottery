@@ -5,13 +5,12 @@ const Winners = async () => {
 
         await db.schema.createTable('winners', table => {
             table.increments('id').primary();
-            table.string('ticketId').notNullable();
+            table.string('ticketId').index();
             table.float('amountWon').notNullable();
             table.json('winningNumbers').notNullable();
             table.timestamp('createdAt').defaultTo(db.fn.now());
-            table.engine('InnoDB');
 
-            table.foreign('id').references('id').inTable('tickets').onDelete('CASCADE');
+            table.foreign('ticketId').references('id').inTable('tickets').onDelete('CASCADE');
 
         });
 

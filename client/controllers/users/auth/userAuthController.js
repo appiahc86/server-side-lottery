@@ -1,8 +1,8 @@
-const db = require("../../../config/db");
+const db = require("../../../../config/db");
 const bcrypt = require("bcryptjs");
-const config = require("../../../config/config");
+const config = require("../../../../config/config");
 const jwt = require("jsonwebtoken");
-const { generateRandomNumber } = require("../../../functions/index");
+const { generateRandomNumber } = require("../../../../functions");
 const axios = require("axios");
 
 
@@ -11,15 +11,14 @@ const userAuthController = {
     //Verify phone number
     verify: async (req, res) => {
         const {phoneNumber, password} = req.body;
-        const regex = /^(?=.*[!@#$%^&*])[A-Za-z0-9!@#$%^&*]{6,}$/g;
+        const regex = /^(?=.{6,})(?=.*[!@#$%^&*()\\[\]{}\-_+=~`|:;"'<>,./?])/
+        return res.status(200).send({message: 202020})
 
         try {
             // validation
             if (phoneNumber.toString().length  < 9 )return res.status(400).send("Please check phone number");
 
-            if (password.length < 6 || !password.match(regex)) {
-                return res.status(400).send("Password length cannot be less than 6 and should contain at least one special character");
-            }
+            if (!password || !password.match(regex)) return res.status(400).send("Minimum password length should be 6 and contains at least 1 special character");
 
             //Check if user already exists
             const user = await db("users").where("phone", phoneNumber)
@@ -67,18 +66,16 @@ const userAuthController = {
 
     //Register a new user
     create: async (req, res) => {
-        const {phoneNumber, password} = req.body;
+        const {phoneNumber, password, network} = req.body;
 
-        const regex = /^(?=.*[!@#$%^&*])[A-Za-z0-9!@#$%^&*]{6,}$/g;
+        const regex = /^(?=.{6,})(?=.*[!@#$%^&*()\\[\]{}\-_+=~`|:;"'<>,./?])/
 
         try {
 
             // validation
             if (phoneNumber.toString().length  < 9 )return res.status(400).send("Please check phone number");
 
-            if (password.length < 6 || !password.match(regex)) {
-                return res.status(400).send("Password length cannot be less than 6 and should contain at least one special character");
-            }
+            if (!password || !password.match(regex)) return res.status(400).send("Minimum password length should be 6 and contains at least 1 special character");
 
             //Hash password
             var salt = await bcrypt.genSaltSync(10);
@@ -94,7 +91,9 @@ const userAuthController = {
            const user = await db("users").insert({
                 phone: phoneNumber,
                 password: hash,
-                specialCode
+                specialCode,
+                network,
+                createdAt: new Date()
             });
 
            const token = jwt.sign({ id: user[0], specialCode: specialCode }, config.JWT_SECRET);

@@ -1,10 +1,12 @@
 const express = require("express");
 const router = express.Router();
 
-const userIndexController = require("../../controllers/users/index");
+const lotteryController = require("../../controllers/lottery");
 const auth = require("../../middleware/auth");
 
-router.get("/tickets", auth, userIndexController.viewTickets);
+// router.get("/", );
+
+router.post("/stake", auth, lotteryController.stake);
 
 
 

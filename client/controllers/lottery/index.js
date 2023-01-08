@@ -1,5 +1,5 @@
-const db = require("../../config/db");
-const { stakeFunction } = require("../../functions/index");
+const db = require("../../../config/db");
+const { stakeFunction } = require("../../../functions");
 
 const lotteryController = {
 
@@ -19,14 +19,15 @@ const lotteryController = {
             const ticketId = Date.now().toString() + userId;
 
             await db.transaction(async trx => {
-
                 //Insert into tickets table
                 await trx("tickets").insert({
                     userId: req.user.id,
                     ticketId,
+                    ticketDate: new Date(),
                     numbers: JSON.stringify(req.body.selectedNumbers),
                     day: new Date().getDay(),
-                    amount: payable
+                    amount: payable,
+                    createdAt: new Date()
                 })
 
                 //Deduct Amount from user's account balance

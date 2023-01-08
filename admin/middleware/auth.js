@@ -1,6 +1,6 @@
 const jwt =  require("jsonwebtoken");
-const db = require("../config/db");
-const config = require("../config/config");
+const db = require("../../config/db");
+const config = require("../../config/config");
 
 
 
@@ -11,10 +11,9 @@ const auth = async (req, res, next) => {
 
         const token = req.header("Authorization").replace("Bearer ", "");
         const decoded = jwt.verify(token, config.JWT_SECRET);
-        const user = await db("users")
+        const user = await db("adminUsers")
             .where({id: decoded.id})
-            .select("id", "firstName", "lastName", "phone",
-                "balance", "specialCode")
+            .select("id", "firstName", "lastName", "phone")
             .limit(1);
 
         //If user not found
