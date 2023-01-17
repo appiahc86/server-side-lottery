@@ -16,7 +16,7 @@ const userAuthController = {
 
         try {
             // validation
-            if (phoneNumber.toString().length  < 9 )return res.status(400).send("Please check phone number");
+            if (phoneNumber.toString().length  !== 9 )return res.status(400).send("Please check phone number");
 
             if (!password || !password.match(regex)) return res.status(400).send("Minimum password length should be 6 and contains at least 1 special character");
 
@@ -73,7 +73,7 @@ const userAuthController = {
         try {
 
             // validation
-            if (phoneNumber.toString().length  < 9 )return res.status(400).send("Please check phone number");
+            if (phoneNumber.toString().length  !== 9 )return res.status(400).send("Please check phone number");
 
             if (!password || !password.match(regex)) return res.status(400).send("Minimum password length should be 6 and contains at least 1 special character");
 

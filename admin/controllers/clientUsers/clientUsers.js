@@ -40,6 +40,7 @@ const clientUsersController  = {
     //Search for user
     search: async (req, res) => {
         const { phone } = req.body;
+        if (phone.toString().length < 9) return res.status(400).send('You have entered wrong phone number');
         try {
             const user = await db('users').where({ phone }).limit(1);
 

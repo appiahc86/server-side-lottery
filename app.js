@@ -7,9 +7,20 @@ const server = http.createServer(app);
 const runMigration = require("./models/index");
 const runTriggers = require("./models/triggers/index");
 const db = require("./config/db");
+const uploader = require("express-fileupload");
+
+// express-fileupload middleware
+app.use(
+    uploader({
+        useTempFiles: true,
+        tempFileDir : '/tmp/'
+    })
+);
+
 
 app.use(express.json());
 app.use(cors());
+
 
 //Set TimeZone
 process.env.TZ = 'Africa/Accra';
@@ -58,8 +69,10 @@ const lotteryRouter = require("./client/routes/lottery/index");
 const userAuthRouter = require("./client/routes/users/auth/userAuthRoutes");
 const usersIndexRouter = require("./client/routes/users/index");
 const usersTransactionRouter = require('./client/routes/users/transactions/index');
+const imagesRouter = require("./client/routes/images/index");
 
 //Use Routes
+app.use("/images", imagesRouter);
 app.use("/lottery", lotteryRouter);
 app.use("/users", usersIndexRouter);
 app.use("/users/auth", userAuthRouter);
@@ -67,11 +80,13 @@ app.use("/users/transactions", usersTransactionRouter);
 
 //Load Admin routes
 const clientUsersRouter = require("./admin/routes/clientUsers/clientUsers");
+const uploadRouter = require("./admin/routes/uploads/uploadRouter")
 
 //Use Admin routes
 app.use("/admin/clientUsers", clientUsersRouter);
+app.use("/admin/uploads", uploadRouter);
 
-
+app.use(express.static('public'));
 
 //404 handler
 app.use((req, res, next) => {
@@ -91,5 +106,6 @@ app.use((err, req, res, next) => {
 
 server.listen(port, () => {
     console.log(`server running on port ${port}`);
+
 })
 // server.listen();
