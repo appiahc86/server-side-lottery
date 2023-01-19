@@ -43,7 +43,7 @@ const userAuthController = {
             const recipient= '233'+phoneNumber;
 
             //encoding sender string to UTF-8 encoding
-            senderEncode= encodeURI(sender);
+            const senderEncode= encodeURI(sender);
 
             const url = `https://sms.textcus.com/api/send?apikey=${smsApiKey}&destination=${recipient}&source=${sender}&dlr=1&type=0&message=${sms}`;
 

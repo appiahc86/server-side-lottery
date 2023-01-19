@@ -5,10 +5,9 @@ const MachineNumber = async () => {
 
         await db.schema.createTable('machineNumbers', table => {
             table.increments('id').primary();
-            table.date('drawDate').defaultTo(db.fn.now());
+            table.date('drawDate').unique().notNullable();
             table.json('numbers').notNullable();
-            table.boolean('closed')
-            table.timestamp('createdAt').defaultTo(db.fn.now());
+            table.boolean('closed').defaultTo(false);
         });
 
     }

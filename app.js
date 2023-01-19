@@ -80,11 +80,13 @@ app.use("/users/transactions", usersTransactionRouter);
 
 //Load Admin routes
 const clientUsersRouter = require("./admin/routes/clientUsers/clientUsers");
-const uploadRouter = require("./admin/routes/uploads/uploadRouter")
+const uploadRouter = require("./admin/routes/uploads/uploadRouter");
+const drawRouter = require("./admin/routes/draw/drawRouter");
 
 //Use Admin routes
 app.use("/admin/clientUsers", clientUsersRouter);
 app.use("/admin/uploads", uploadRouter);
+app.use("/admin/draw", drawRouter);
 
 app.use(express.static('public'));
 

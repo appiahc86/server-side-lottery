@@ -1,8 +1,9 @@
 const {updateBalanceTrigger} = require("./transactionTrigger");
+const { winnersTrigger } = require("./winnersTrigger");
 
 
 const triggers =  [
-    updateBalanceTrigger
+    updateBalanceTrigger, winnersTrigger
 ]
 
 const runTriggers = async () => {

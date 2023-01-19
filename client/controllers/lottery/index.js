@@ -15,18 +15,14 @@ const lotteryController = {
 
             if (parseFloat(req.user.balance) < parseFloat(payable)) return res.status(400).send("Your balance is not sufficient");
 
-            const userId = "-" + req.user.id
-            const ticketId = Date.now().toString() + userId;
 
             await db.transaction(async trx => {
                 //Insert into tickets table
                 await trx("tickets").insert({
                     userId: req.user.id,
-                    ticketId,
-                    ticketDate: new Date(),
                     numbers: JSON.stringify(req.body.selectedNumbers),
-                    day: new Date().getDay(),
                     amount: payable,
+                    ticketDate: new Date(),
                     createdAt: new Date()
                 })
 

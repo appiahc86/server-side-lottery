@@ -11,7 +11,7 @@ const userIndexController = {
     viewTickets: async (req, res) => {
         try {
             const data = await db("tickets").where('userId', req.user.id)
-                .select('day', 'numbers', 'ticketDate', 'ticketId',
+                .select( 'id','numbers', 'ticketDate',
                     'ticketStatus', 'amount')
                 .orderBy('id', 'desc').limit(20);
 

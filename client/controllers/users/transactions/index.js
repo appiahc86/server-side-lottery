@@ -75,13 +75,23 @@ const userTransactions  = {
         if (parseFloat(req.user.balance) < parseFloat(amount)) return res.status(400).send('Sorry! your balance is not sufficient');
 
         try {
-            await db('transactions').insert({
+            await db.transaction(async trx => {
+
+                //deduct amount from users account
+                await trx('users').where({id: req.user.id})
+                    .decrement('balance', amount)
+
+                //save to transactions table
+            await trx('transactions').insert({
                 userId: req.user.id,
                 transactionType,
                 amount: parseFloat(amount),
                 network,
-                transactionDate: new Date()
+                transactionDate: new Date(),
+                createdAt: new Date()
             })
+
+            })// ./transaction
 
             return res.status(200).end();
 

@@ -10,7 +10,11 @@ const generateRandomNumber = () => {
     return Math.floor(100000 + Math.random() * 900000);
 }
 
+//calculate winnings
+const calculateWinnings = (totalNumbers, amount) => {
+    return totalNumbers * amount;
+}
 
 module.exports = {
-    stakeFunction, generateRandomNumber
+    stakeFunction, generateRandomNumber, calculateWinnings
 }

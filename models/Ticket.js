@@ -6,13 +6,11 @@ const Ticket = async () => {
         await db.schema.createTable('tickets', table => {
             table.increments('id').primary();
             table.integer('userId').unsigned().notNullable().index();
-            table.string('ticketId').notNullable().index();
-            table.date('ticketDate').defaultTo(db.fn.now());
             table.json('numbers').notNullable();
-            table.tinyint('day').unsigned().notNullable();  // 0 = sunday, 1 = monday ...
             table.enum('ticketStatus', ['open', 'closed']).defaultTo('open');
             table.float('amount').notNullable();
-            table.timestamp('createdAt').defaultTo(db.fn.now());
+            table.date('ticketDate').index();
+            table.dateTime('createdAt');
 
             table.foreign('userId').references('id').inTable('users').onDelete('CASCADE');
 
