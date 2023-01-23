@@ -3,7 +3,7 @@ const db = require("../../../config/db");
 const userIndexController = {
     //View user profile
     viewProfile: async (req, res) => {
-
+        return res.status(400).send('Bad request')
     },
 
 

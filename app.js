@@ -69,21 +69,23 @@ const lotteryRouter = require("./client/routes/lottery/index");
 const userAuthRouter = require("./client/routes/users/auth/userAuthRoutes");
 const usersIndexRouter = require("./client/routes/users/index");
 const usersTransactionRouter = require('./client/routes/users/transactions/index');
-const imagesRouter = require("./client/routes/images/index");
+const clientIndexRouter = require("./client/routes/indexRouter");
 
 //Use Routes
-app.use("/images", imagesRouter);
+app.use("/", clientIndexRouter);
 app.use("/lottery", lotteryRouter);
 app.use("/users", usersIndexRouter);
 app.use("/users/auth", userAuthRouter);
 app.use("/users/transactions", usersTransactionRouter);
 
 //Load Admin routes
+const adminIndexRouter = require("./admin/routes/indexRouter")
 const clientUsersRouter = require("./admin/routes/clientUsers/clientUsers");
 const uploadRouter = require("./admin/routes/uploads/uploadRouter");
 const drawRouter = require("./admin/routes/draw/drawRouter");
 
 //Use Admin routes
+app.use("/admin", adminIndexRouter);
 app.use("/admin/clientUsers", clientUsersRouter);
 app.use("/admin/uploads", uploadRouter);
 app.use("/admin/draw", drawRouter);
@@ -108,6 +110,5 @@ app.use((err, req, res, next) => {
 
 server.listen(port, () => {
     console.log(`server running on port ${port}`);
-
 })
 // server.listen();

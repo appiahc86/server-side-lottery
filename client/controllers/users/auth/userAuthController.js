@@ -8,7 +8,7 @@ const axios = require("axios");
 
 const userAuthController = {
 
-    //Verify phone number
+    //......................Verify phone number...........................
     verify: async (req, res) => {
         const {phoneNumber, password} = req.body;
         const regex = /^(?=.{6,})(?=.*[!@#$%^&*()\\[\]{}\-_+=~`|:;"'<>,./?])/
@@ -34,7 +34,7 @@ const userAuthController = {
             const smsApiKey = config.SMS_API_KEY;
 
             //11 Characters maximum
-            const sender = "Nanty";
+            const sender = config.SMS_SENDER;
 
             //message to send to recipient
             const sms = `Your Nanty Verification code is: ${verificationCode}`;
@@ -53,6 +53,7 @@ const userAuthController = {
             })
 
                 .catch((err) => {
+                    console.log(err)
                     return res.status(400).send("Failed to send verification code. Please contact Admin");
                 })
 
@@ -64,7 +65,7 @@ const userAuthController = {
     }, // ./Verify
 
 
-    //Register a new user
+    //..............Register a new user........................
     create: async (req, res) => {
         const {phoneNumber, password, network} = req.body;
 
@@ -84,8 +85,7 @@ const userAuthController = {
                 console.log("password hash was not successful");
                 return res.status(400).send("Sorry something went wrong");
             }
-            // const specialCode = generateRandomNumber();
-            const specialCode = 202020;
+            const specialCode = generateRandomNumber();
 
             //Save to db
            const user = await db("users").insert({
@@ -111,7 +111,7 @@ const userAuthController = {
     }, // ./Register
 
 
-    //Login
+    //......................Login...........................
     login: async (req, res) => {
         const {phoneNumber, password} = req.body;
 
@@ -153,6 +153,93 @@ const userAuthController = {
             return res.status(400).send("Sorry your request was not successful");
         } // ./Catch block
     }, // ./Login
+
+
+
+        //...............Request password reset code....................
+    requestPasswordResetCode: async (req, res) => {
+        const { phoneNumber } = req.body;
+        try {
+
+            const user = await db('users').where({phone: phoneNumber}).limit(1);
+            if (!user.length) return res.status(400).send("Sorry this number was not found");
+            return res.status(200).send({code: 202020, phoneNumber})
+
+            const code = generateRandomNumber();
+
+            //.Send sms to phone number....
+            const smsApiKey = config.SMS_API_KEY;
+
+            //11 Characters maximum
+            const sender = config.SMS_SENDER;
+
+            //message to send to recipient
+            const sms = `Your password reset code is: ${code}`;
+
+            //International format (233) or (+233)
+            const recipient= '233'+phoneNumber;
+
+            //encoding sender string to UTF-8 encoding
+            const senderEncode= encodeURI(sender);
+
+            const url = `https://sms.textcus.com/api/send?apikey=${smsApiKey}&destination=${recipient}&source=${sender}&dlr=1&type=0&message=${sms}`;
+
+            axios.get(url).then(response=> {
+                if(response.data.status.toString() === '0000') return res.status(200).send({code, phoneNumber})
+                return res.status(400).send("Failed to send password reset code. Please contact Admin");
+            })
+
+                .catch((err) => {
+                    console.log(err)
+                    return res.status(400).send("Failed to send password reset code. Please contact Admin");
+                })
+
+        }catch (e) {
+            console.log(e);
+            return res.status(400).send("Sorry your request was not successful");
+        }
+    },
+
+
+
+        //............. Reset Password...........................
+    resetPassword: async (req, res) => {
+        const { phoneNumber, password, validateRequestCode } = req.body;
+        try {
+            const regex = /^(?=.{6,})(?=.*[!@#$%^&*()\\[\]{}\-_+=~`|:;"'<>,./?])/
+            // validation
+
+            if (validateRequestCode !== "9#45$!")return res.status(400).send("Origin could not be verified");
+
+            if (phoneNumber.toString().length  !== 9 )return res.status(400).send("Please check phone number");
+
+            if (!password || !password.match(regex)) return res.status(400).send("Minimum password length should be 6 and contains at least 1 special character");
+
+            const user = await db("users").where({phone: phoneNumber}).limit(1);
+            if (!user.length) return res.status(400).send("Sorry, user was not found");
+
+            //Hash password
+            var salt = await bcrypt.genSaltSync(10);
+            var hash = await bcrypt.hashSync(password, salt);
+            if (!hash) {
+                console.log("password hash was not successful");
+                return res.status(400).send("Sorry something went wrong Please try again later");
+            }
+
+            const specialCode = generateRandomNumber();
+
+            //Update password in dp
+            await db('users').where({id: user[0].id})
+                .update({password: hash, specialCode: specialCode});
+
+            res.status(200).end();
+
+        }catch (e) {
+            console.log(e);
+            return res.status(400).send("Sorry your request was not successful");
+        }
+    }
+
 }
 
 module.exports = userAuthController;

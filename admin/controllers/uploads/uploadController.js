@@ -13,7 +13,7 @@ const uploadController = {
             images = JSON.parse(query[0].list) || [];
 
 
-            res.status(200).send({images, path: `http://${req.headers.host}/images/`});
+            res.status(200).send({images, path: `http://${req.headers.host}/images/`}); //todo change to https
         }catch (e) {
             console.log(e);
             return res.status(400).send("Sorry your request was not successful");
