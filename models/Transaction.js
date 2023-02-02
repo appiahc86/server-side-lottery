@@ -10,7 +10,7 @@ const Transaction = async () => {
             table.float('amount').notNullable();
             table.enum('network', ['mtn','vodafone','airtelTigo']).notNullable();
             table.enum('status', ['pending', 'successful', 'failed']).defaultTo('pending');
-            table.date('transactionDate').notNullable();
+            table.date('transactionDate').index().notNullable();
             table.dateTime('createdAt');
 
             table.foreign('userId').references('id').inTable('users').onDelete('CASCADE');

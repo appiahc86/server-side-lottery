@@ -79,16 +79,22 @@ app.use("/users/auth", userAuthRouter);
 app.use("/users/transactions", usersTransactionRouter);
 
 //Load Admin routes
+const adminUserAuthRouter = require("./admin/routes/users/auth/userAuthRoutes");
 const adminIndexRouter = require("./admin/routes/indexRouter")
 const clientUsersRouter = require("./admin/routes/clientUsers/clientUsers");
 const uploadRouter = require("./admin/routes/uploads/uploadRouter");
 const drawRouter = require("./admin/routes/draw/drawRouter");
+const transactionsRouter = require("./admin/routes/transactions/transactionsRouter");
+const dashboardRouter = require("./admin/routes/dashboardRouter");
 
 //Use Admin routes
+app.use("/admin/users/auth", adminUserAuthRouter);
 app.use("/admin", adminIndexRouter);
 app.use("/admin/clientUsers", clientUsersRouter);
 app.use("/admin/uploads", uploadRouter);
 app.use("/admin/draw", drawRouter);
+app.use("/admin/transactions", transactionsRouter);
+app.use("/admin/dashboard", dashboardRouter);
 
 app.use(express.static('public'));
 

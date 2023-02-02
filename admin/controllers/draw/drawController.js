@@ -49,6 +49,17 @@ const drawController = {
     },
 
 
+    //delete draw
+    destroy: async (req, res) => {
+        try {
+            await db('machineNumbers').where('id', req.body.id).del();
+            return res.status(200).end();
+        }catch (e) {
+            console.log(e);
+            return res.status(400).send("Sorry your request was not successful");
+        }
+    },
+
 
 
 
@@ -91,6 +102,7 @@ const drawController = {
                 const winners = [];
 
                 for (let ticket of tickets){
+
                     //Find Matching numbers
                     let numbersInDrawNumber = ticket.numbers.filter(number => drawNumbers.includes(number));
 

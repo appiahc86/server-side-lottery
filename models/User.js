@@ -9,23 +9,15 @@ const User = async () => {
             table.string('lastName', 20);
             table.string('phone', 15).unique();
             table.enum('network', ['mtn', 'vodafone', 'airtelTigo']).notNullable();
-            table.double('balance').defaultTo(0);
+            table.decimal('balance').defaultTo(0);
             table.string('password').notNullable();
+            table.string('passwordResetCode', 10);
             table.mediumint('specialCode').notNullable(); //will use in JWT compare
             table.boolean('isActive').defaultTo(true);
             table.timestamp('createdAt').defaultTo(db.fn.now());
         });
 
 
-        // await db('users').insert(
-        //     {
-        //         firstName: "Appiah",
-        //         phone: 242740320,
-        //         specialCode: 202020,
-        //         network: 'mtn',
-        //         password: "$2a$10$N9sVJn6Nwxtm.PUmbRXLzOFNZfRAjTjNK3EfFu2qRjpnNHQrCbd6i" // @LogMeIn
-        //     }
-        // );
     }
 
 

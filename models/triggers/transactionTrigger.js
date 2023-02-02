@@ -6,11 +6,11 @@ const updateBalanceTrigger =  () => {
 CREATE TRIGGER IF NOT EXISTS update_balance_trigger
 AFTER UPDATE ON transactions FOR EACH ROW
 BEGIN
-  IF NEW.status = 'successful' AND OLD.transactionType = 'deposit' THEN
+  IF NEW.status = 'successful' AND OLD.status = 'pending' AND OLD.transactionType = 'deposit' THEN
       UPDATE users
       SET balance = balance + OLD.amount
       WHERE id = OLD.userId;
-  ELSEIF NEW.status = 'failed' AND OLD.transactionType = 'withdrawal' THEN
+  ELSEIF NEW.status = 'failed' AND OLD.status = 'pending' AND OLD.transactionType = 'withdrawal' THEN
       UPDATE users
       SET balance = balance + OLD.amount
       WHERE id = OLD.userId;    

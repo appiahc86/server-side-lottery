@@ -4,10 +4,12 @@ const MachineNumber = require("./MachineNumber");
 const Winners = require("./Winners");
 const Image = require("./Image");
 const Transaction = require("./Transaction");
+const GameStatus = require("./GameStatus");
+const AdminUser = require("./AdminUser");
 
 
 const migrations =  [
-    User, Ticket, MachineNumber, Transaction, Image, Winners
+    User, Ticket, MachineNumber, Transaction, Image, Winners, GameStatus, AdminUser
 ]
 
   const runMigrations = async () => {

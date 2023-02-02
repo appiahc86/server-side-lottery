@@ -145,7 +145,10 @@ const userAuthController = {
 
             res.status(200).send({
                 token,
-                user: {...user[0], id: undefined, password: undefined, isActive: undefined, createdAt: undefined, specialCode: undefined}
+                user: {
+                  firstName: user[0].firstName, lastName: user[0].lastName, phone: user[0].phone,
+                    network: user[0].network, balance: user[0].balance
+                }
             })
 
         }catch (e) {
@@ -163,11 +166,17 @@ const userAuthController = {
 
             const user = await db('users').where({phone: phoneNumber}).limit(1);
             if (!user.length) return res.status(400).send("Sorry this number was not found");
-            return res.status(200).send({code: 202020, phoneNumber})
+
 
             const code = generateRandomNumber();
 
-            //.Send sms to phone number....
+            //update password reset code in db
+            await db('users').where({phone: phoneNumber})
+                .update({passwordResetCode: code})
+
+            return res.status(200).end()
+
+            //...........................Send sms to phone number.....................
             const smsApiKey = config.SMS_API_KEY;
 
             //11 Characters maximum
@@ -185,7 +194,7 @@ const userAuthController = {
             const url = `https://sms.textcus.com/api/send?apikey=${smsApiKey}&destination=${recipient}&source=${sender}&dlr=1&type=0&message=${sms}`;
 
             axios.get(url).then(response=> {
-                if(response.data.status.toString() === '0000') return res.status(200).send({code, phoneNumber})
+                if(response.data.status.toString() === '0000') return res.status(200).end();
                 return res.status(400).send("Failed to send password reset code. Please contact Admin");
             })
 
@@ -204,8 +213,15 @@ const userAuthController = {
 
         //............. Reset Password...........................
     resetPassword: async (req, res) => {
-        const { phoneNumber, password, validateRequestCode } = req.body;
+        const { phoneNumber, password, passwordResetCode, validateRequestCode } = req.body;
         try {
+
+            if (!passwordResetCode) res.status(400).send("Please provide the reset code");
+            const query = await db("users").where({phone: phoneNumber}).limit(1);
+             if (!query.length) res.status(400).send("Sorry, this user was not found");
+             if (query[0].passwordResetCode.toString() !== passwordResetCode.toString()) return res.status(400).send("Sorry, you entered a wrong code. Please check you phone");
+
+
             const regex = /^(?=.{6,})(?=.*[!@#$%^&*()\\[\]{}\-_+=~`|:;"'<>,./?])/
             // validation
 
@@ -228,9 +244,9 @@ const userAuthController = {
 
             const specialCode = generateRandomNumber();
 
-            //Update password in dp
+            //Update password in db
             await db('users').where({id: user[0].id})
-                .update({password: hash, specialCode: specialCode});
+                .update({password: hash, specialCode: specialCode, passwordResetCode: ''});
 
             res.status(200).end();
 

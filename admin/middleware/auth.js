@@ -13,7 +13,7 @@ const auth = async (req, res, next) => {
         const decoded = jwt.verify(token, config.JWT_SECRET);
         const user = await db("adminUsers")
             .where({id: decoded.id})
-            .select("id", "firstName", "lastName", "phone")
+            .select("id", "displayName", "role", "isActive","specialCode")
             .limit(1);
 
         //If user not found
@@ -21,13 +21,15 @@ const auth = async (req, res, next) => {
 
 
         //if special code does not match
-        if (parseInt(user[0].specialCode ) !== parseInt(decoded.specialCode))
+        if ( parseInt(user[0].specialCode ) !== parseInt(decoded.specialCode))
             return res.status(401).send("Please login");
 
         req.token = token;
         req.user = user[0];
         next();
     }catch (e) {
+        if(e.message === "invalid token") return res.status(401).send("Please login");
+        console.log(e)
         res.status(401).send("Please login");
     }
 }

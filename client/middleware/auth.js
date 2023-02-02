@@ -29,6 +29,8 @@ const auth = async (req, res, next) => {
         req.user = user[0];
         next();
     }catch (e) {
+        if(e.message === "invalid token") return res.status(401).send("Please login");
+        console.log(e)
         res.status(401).send("Please login");
     }
 }
