@@ -12,6 +12,9 @@ router.post("/deposit", auth, userTransactions.deposit);
 //Withdraw
 router.post("/withdraw", auth, userTransactions.withdraw);
 
+//Confirm Payment
+router.post("/verify", auth, userTransactions.verifyPayment);
+
 //Get account balance
 router.get("/balance", auth, userTransactions.getAccountBalance);
 

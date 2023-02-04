@@ -15,6 +15,21 @@ const calculateWinnings = (totalNumbers, amount) => {
     return totalNumbers * amount;
 }
 
+
+const convertNetwork = (newtwork) => {
+    let type = '';
+    switch (newtwork) {
+        case 'airtelTigo': type = 'ATL'
+        break;
+        case 'vodafone': type =  'VOD'
+        break;
+        default: type =  'MTN'
+            break;
+    }
+
+    return type;
+}
+
 module.exports = {
-    stakeFunction, generateRandomNumber, calculateWinnings
+    stakeFunction, generateRandomNumber, calculateWinnings, convertNetwork
 }

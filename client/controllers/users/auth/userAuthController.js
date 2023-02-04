@@ -2,19 +2,41 @@ const db = require("../../../../config/db");
 const bcrypt = require("bcryptjs");
 const config = require("../../../../config/config");
 const jwt = require("jsonwebtoken");
-const { generateRandomNumber } = require("../../../../functions");
+const { generateRandomNumber, convertNetwork } = require("../../../../functions");
 const axios = require("axios");
 
+const notVerifiedError = 'Sorry, this mobile money number cannot be verified';
 
 const userAuthController = {
 
     //......................Verify phone number...........................
     verify: async (req, res) => {
-        const {phoneNumber, password} = req.body;
+        const {phoneNumber, network} = req.body;
         const regex = /^(?=.{6,})(?=.*[!@#$%^&*()\\[\]{}\-_+=~`|:;"'<>,./?])/
-        return res.status(200).send({message: 202020})
+
 
         try {
+
+            //Verify Phone number
+            let bankCode = convertNetwork(network);
+            await axios.get(
+                `https://api.paystack.co/bank/resolve`,
+                {
+                    params: {
+                        account_number: '0'+phoneNumber,
+                        bank_code: bankCode,
+                    },
+                    headers: { 'Authorization': `Bearer ${config.PAYSTACK_SECRET_KEY}`}
+                }
+            ).then(response => {
+                if (response.data.status !== true) return res.status(400).send(notVerifiedError)
+            }).catch(e => {
+                throw new Error(notVerifiedError)
+            })
+
+            return res.status(200).send({message: 202020})
+
+
             // validation
             if (phoneNumber.toString().length  !== 9 )return res.status(400).send("Please check phone number");
 
@@ -59,7 +81,8 @@ const userAuthController = {
 
 
         }catch (e) {
-            console.log(e);
+            if (e.message === notVerifiedError) return  res.status(400).send(notVerifiedError);
+            console.log(e)
             return res.status(400).send("Sorry your request was not successful");
         } // ./Catch block
     }, // ./Verify
@@ -67,7 +90,7 @@ const userAuthController = {
 
     //..............Register a new user........................
     create: async (req, res) => {
-        const {phoneNumber, password, network} = req.body;
+        const {phoneNumber, password, network } = req.body;
 
         const regex = /^(?=.{6,})(?=.*[!@#$%^&*()\\[\]{}\-_+=~`|:;"'<>,./?])/
 
@@ -77,6 +100,7 @@ const userAuthController = {
             if (phoneNumber.toString().length  !== 9 )return res.status(400).send("Please check phone number");
 
             if (!password || !password.match(regex)) return res.status(400).send("Minimum password length should be 6 and contains at least 1 special character");
+
 
             //Hash password
             var salt = await bcrypt.genSaltSync(10);

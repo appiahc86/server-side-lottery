@@ -17,7 +17,6 @@ const indexController = {
             res.status(200).send({images, day: new Date().getDay()});
         }catch (e) {
             console.log(e);
-            // return res.status(400).send("Sorry your request was not successful");
             return res.status(204).end();
         }
     },
