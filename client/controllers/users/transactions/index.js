@@ -25,7 +25,8 @@ const userTransactions  = {
     index: async (req, res) => {
         try {
             const data = await db("transactions").where({userId: req.user.id})
-                .select('id', 'transactionType', 'amount', 'status', 'createdAt')
+                .select('id', 'transactionType', 'amount', 'referenceNumber',
+                    'status', 'createdAt')
                 .orderBy('id', 'DESC').limit(20);
             res.status(200).send(data);
         }catch (e) {
@@ -56,21 +57,6 @@ const userTransactions  = {
             }
 
             await db.transaction(async trx => {
-            //first save transaction
-           const transaction =  await trx('transactions').insert({
-                userId: req.user.id,
-                transactionType: 'deposit',
-                amount: parseFloat(amount),
-                network,
-                status: 'pending',
-                transactionDate: new Date(),
-                createdAt: new Date()
-            })
-
-            data.metadata = {
-                localTransactionId: transaction[0],
-                type: 'deposit'
-            }
 
 
             const response = await    axios.post("https://api.paystack.co/charge",
@@ -83,14 +69,30 @@ const userTransactions  = {
                 }
             )
 
+            // if (response.data.data.status === "pay_offline" || response.data.data.status === "send_otp") {
             if (response.data.status === true) {
-                await trx('transactions').where('id', transaction[0])
-                    .update({referenceNumber: response.data.data.reference})
-                return res.status(200).send(response.data.data.reference);
+
+                await trx('transactions').insert({
+                    userId: req.user.id,
+                    referenceNumber: response.data.data.reference,
+                    transactionType: 'deposit',
+                    amount: parseFloat(amount),
+                    network,
+                    status: 'pending',
+                    transactionDate: new Date(),
+                    createdAt: new Date()
+                })
+
+                return res.status(200).send({
+                    reference: response.data.data.reference,
+                    network: network,
+                    // display_text: response.data.data.display_text
+                    display_text: 'Continue payment on your phone'
+                });
+
             }
             else {
                 console.log(response.data);
-                await trx('transactions').where('id', transaction[0]).del();
                 return res.status(400).send("Sorry payment request was refused");
             }
 
@@ -105,7 +107,7 @@ const userTransactions  = {
     },
 
     //Withdraw Money
-    withdraw: async (req, res) => {
+    withdrawal: async (req, res) => {
         const { amount, network, transactionType} = req.body;
         if (parseFloat(req.user.balance) < parseFloat(amount)) return res.status(400).send('Sorry! your balance is not sufficient');
 
@@ -139,6 +141,31 @@ const userTransactions  = {
     },
 
 
+    //Submit Otp
+    submitOtp: async (req, res) => {
+        const { otp, reference } = req.body;
+        return res.end();
+
+        try {
+
+            const response = await axios.post("https://api.paystack.co/charge/submit_otp",
+                JSON.stringify({otp, reference}),
+                {
+                    headers: {
+                        'Authorization': `Bearer ${config.PAYSTACK_SECRET_KEY}`,
+                        'Content-Type': 'application/json'
+                    }
+                }
+            )
+
+
+        }catch (e) {
+            console.log(e.message);
+            res.end();
+        }
+    },
+
+
     //Verify Payment
     verifyPayment: async (req, res) => {
         const { reference } = req.body;
@@ -154,14 +181,12 @@ const userTransactions  = {
                 )
 
             if (response.data.data.status === "success"){
-                const localTransactionId = response.data.data.metadata.localTransactionId;
-                await db("transactions").where('id', localTransactionId)
+                await db("transactions").where('referenceNumber', reference)
                     .update({status: 'successful'})
+            }
 
-                const user = await db('users').where('id', req.user.id);
-                return res.status(200).send({balance: user[0].balance});
-            } else
-                return res.status(200).send({balance: 0});
+            const user = await db('users').where('id', req.user.id);
+            return res.status(200).send({balance: user[0].balance});
 
         }catch (e) {
             console.log(e.message);

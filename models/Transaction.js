@@ -5,7 +5,7 @@ const Transaction = async () => {
 
         await db.schema.createTable('transactions', table => {
             table.increments('id').primary()
-            table.string('referenceNumber').index();
+            table.string('referenceNumber').unique().notNullable().index();
             table.integer('userId').unsigned().notNullable().index();
             table.enum('transactionType', ['withdrawal','deposit']).notNullable();
             table.float('amount').notNullable();

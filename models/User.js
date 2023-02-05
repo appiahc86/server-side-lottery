@@ -5,11 +5,9 @@ const User = async () => {
 
         await db.schema.createTable('users', table => {
             table.increments('id').primary();
-            // table.string('firstName', 20);
-            // table.string('lastName', 20);
             table.string('phone', 15).unique();
             table.enum('network', ['mtn', 'vodafone', 'airtelTigo']).notNullable();
-            table.decimal('balance').defaultTo(0);
+            table.decimal('balance').defaultTo(0).unsigned();
             table.string('password').notNullable();
             table.string('passwordResetCode', 10);
             table.mediumint('specialCode').notNullable(); //will use in JWT compare

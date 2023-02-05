@@ -9,6 +9,7 @@ const runTriggers = require("./models/triggers/index");
 const db = require("./config/db");
 const uploader = require("express-fileupload");
 const winston = require('winston');
+const transactionJob = require("./cron");
 
 // express-fileupload middleware
 app.use(
@@ -21,6 +22,11 @@ app.use(
 
 app.use(express.json());
 app.use(cors());
+
+
+//Run cron jobs
+transactionJob.start();
+
 
 //Use winston
 // const logger = winston.createLogger({
@@ -117,6 +123,7 @@ const uploadRouter = require("./admin/routes/uploads/uploadRouter");
 const drawRouter = require("./admin/routes/draw/drawRouter");
 const transactionsRouter = require("./admin/routes/transactions/transactionsRouter");
 const dashboardRouter = require("./admin/routes/dashboardRouter");
+const {log} = require("winston");
 
 //Use Admin routes
 app.use("/admin/users/auth", adminUserAuthRouter);

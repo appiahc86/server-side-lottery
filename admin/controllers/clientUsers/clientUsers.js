@@ -17,9 +17,9 @@ const clientUsersController  = {
                 users[0].map(user => {
                     user.password = undefined;
                     user.network = undefined;
+                    user.passwordResetCode = undefined;
                     user.specialCode = undefined;
                     user.createdAt = undefined;
-                    user.balance = undefined;
                 })
             }
 
