@@ -2,6 +2,7 @@ const db = require('../../../config/db');
 const fs = require('fs');
 const path = require('path');
 const uploadDir = path.join(__dirname, '../../../public/images/');
+const logger = require("../../../winston");
 
 const uploadController = {
     //Get all images
@@ -12,10 +13,11 @@ const uploadController = {
             const query = await db('images').select('list').limit(1);
             images = JSON.parse(query[0].list) || [];
 
-
-            res.status(200).send({images, path: `http://${req.headers.host}/images/`}); //todo change to https
+            if (process.env.NODE_ENV !== 'production')
+            res.status(200).send({images, path: `http://${req.headers.host}/images/`});
+            else  res.status(200).send({images, path: `https://${req.headers.host}/images/`});
         }catch (e) {
-            console.log(e);
+            logger.error(e);
             return res.status(400).send("Sorry your request was not successful");
         }
     },
@@ -68,11 +70,12 @@ const uploadController = {
                  .update({list: JSON.stringify(updated)});
             return res.status(200).end();
         }catch (e) {
-            console.log(e);
+            logger.error(e);
             return res.status(400).send("Sorry your request was not successful");
         }
     },
 
+    //Arrange images
     arrange: async (req, res) => {
         try {
             const { images } =  req.body;
@@ -86,7 +89,7 @@ const uploadController = {
                 .update({list: JSON.stringify(updated)});
             return res.status(200).end();
         }catch (e) {
-            console.log(e);
+            logger.error(e);
             return res.status(400).send("Sorry your request was not successful");
         }
     },
@@ -107,7 +110,7 @@ const uploadController = {
             //delete image from hard disk
              fs.unlink(uploadDir + image.name, (err) => {
                  if (err) {
-                     console.log(err) ;
+                     logger.error(err) ;
                      return res.status(400).send("Sorry, failed to remove image");
                  }
              });
@@ -123,7 +126,7 @@ const uploadController = {
                 .update({list: JSON.stringify(updated)});
            return  res.status(200).send({images: updated});
         }catch (e) {
-            console.log(e);
+            logger.error(e);
             return res.status(400).send("Sorry your request was not successful");
         }
     },

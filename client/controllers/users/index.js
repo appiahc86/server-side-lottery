@@ -1,4 +1,5 @@
 const db = require("../../../config/db");
+const logger = require("../../../winston");
 
 const userIndexController = {
     //View user profile
@@ -18,7 +19,7 @@ const userIndexController = {
             res.status(200).send({data});
 
         }catch (e) {
-            console.log(e);
+            logger.error(e);
             return res.status(400).send("Sorry your request was not successful");
         }
     },

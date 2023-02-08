@@ -1,4 +1,5 @@
 const db = require("../../../config/db");
+const logger = require("../../../winston");
 
 const clientUsersController  = {
     //List all users
@@ -32,7 +33,7 @@ const clientUsersController  = {
             });
 
         }catch (e) {
-            console.log(e);
+            logger.error(e);
             return res.status(400).send("Sorry your request was not successful");
         }
     },
@@ -50,7 +51,7 @@ const clientUsersController  = {
             return res.status(400).send('Sorry, this user was not found');
 
         }catch (e) {
-            console.log(e);
+            logger.error(e);
             return res.status(400).send("Sorry your request was not successful");
         }
     }

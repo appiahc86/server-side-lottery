@@ -3,7 +3,7 @@ const bcrypt = require("bcryptjs");
 const config = require("../../../../config/config");
 const jwt = require("jsonwebtoken");
 const { generateRandomNumber } = require("../../../../functions");
-const axios = require("axios");
+const logger = require("../../../../winston");
 
 
 const userAuthController = {
@@ -28,7 +28,7 @@ const userAuthController = {
             let salt = await bcrypt.genSaltSync(10);
             let hash = await bcrypt.hashSync(password, salt);
             if (!hash) {
-                console.log("password hash was not successful");
+                logger.info("password hash was not successful");
                 return res.status(400).send("Sorry something went wrong");
             }
             const specialCode = generateRandomNumber();
@@ -47,7 +47,7 @@ const userAuthController = {
 
         }catch (e) {
             if (e.code === 'ER_DUP_ENTRY') return res.status(400).send('Sorry, this number already exists');
-            console.log(e);
+            logger.error(e);
             return res.status(400).send("Sorry your request was not successful");
 
         } // ./Catch block
@@ -94,7 +94,7 @@ const userAuthController = {
             })
 
         }catch (e) {
-            console.log(e);
+            logger.error(e);
             return res.status(400).send("Sorry your request was not successful");
         } // ./Catch block
     }, // ./Login
@@ -127,7 +127,7 @@ const userAuthController = {
             let salt = await bcrypt.genSaltSync(10);
             let hash = await bcrypt.hashSync(password, salt);
             if (!hash) {
-                console.log("password hash was not successful");
+                logger.info("password hash was not successful");
                 return res.status(400).send("Sorry something went wrong");
             }
 
@@ -140,7 +140,7 @@ const userAuthController = {
             res.status(200).end();
 
         }catch (e) {
-            console.log(e);
+            logger.error(e);
             return res.status(400).send("Sorry your request was not successful");
         }
     }

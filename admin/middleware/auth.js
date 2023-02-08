@@ -1,6 +1,7 @@
 const jwt =  require("jsonwebtoken");
 const db = require("../../config/db");
 const config = require("../../config/config");
+const logger = require("../../winston");
 
 
 
@@ -29,7 +30,7 @@ const auth = async (req, res, next) => {
         next();
     }catch (e) {
         if(e.message === "invalid token") return res.status(401).send("Please login");
-        console.log(e)
+        logger.error(e)
         res.status(401).send("Please login");
     }
 }

@@ -15,8 +15,8 @@ const calculateWinnings = (totalNumbers, amount) => {
     return totalNumbers * amount;
 }
 
-
-const convertNetwork = (newtwork) => {
+//get bank code by network
+const getBankCode = (newtwork) => {
     let type = '';
     switch (newtwork) {
         case 'airtelTigo': type = 'ATL'
@@ -30,6 +30,41 @@ const convertNetwork = (newtwork) => {
     return type;
 }
 
+
+const convertNetwork = (newtwork) => {
+    let type = '';
+    switch (newtwork) {
+        case 'airtelTigo': type = 'tgo'
+            break;
+        case 'vodafone': type =  'vod'
+            break;
+        default: type =  'mtn'
+            break;
+    }
+
+    return type;
+}
+
+
+//Generate reference number for withdrawals
+const generateReferenceNumber = (date) => {
+    let year = new Date(date).getFullYear();
+    let month = new Date(date).getMonth() + 1;
+    month = month < 10 ? `0${month}` : month;
+    let day = new Date(date).getDate();
+    day = day < 10 ? `0${day}` : day;
+    let hour = new Date(date).getHours();
+    hour = hour < 10 ? `0${hour}` : hour;
+    let minutes = new Date(date).getMinutes();
+    minutes = minutes < 10 ? `0${minutes}` : minutes;
+    let seconds = new Date(date).getSeconds();
+    seconds = seconds < 10 ? `0${seconds}` : seconds;
+    let milliseconds = new Date(date).getMilliseconds();
+    milliseconds = milliseconds < 10 ? `0${milliseconds}` : milliseconds;
+
+    return `${year}${month}${day}${hour}${minutes}${seconds}${milliseconds}wtd`;
+}
+
 module.exports = {
-    stakeFunction, generateRandomNumber, calculateWinnings, convertNetwork
+    stakeFunction, generateRandomNumber, calculateWinnings, getBankCode, convertNetwork, generateReferenceNumber
 }

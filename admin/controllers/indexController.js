@@ -2,6 +2,8 @@ const axios = require("axios");
 const config = require("../../config/config");
 const db = require("../../config/db");
 const crypto = require('crypto');
+const logger = require("../../winston");
+
 const secret = config.PAYSTACK_SECRET_KEY;
 
 const indexController = {
@@ -17,11 +19,11 @@ const indexController = {
                     return res.status(400).end();
                 })
                 .catch(e => {
-                    console.log(e)
+                    logger.error(e)
                     res.status(400).end()
                 })
         }catch (e) {
-            console.log(e);
+            logger.error(e);
             res.status(400).end();
         }
     },
@@ -33,7 +35,7 @@ const indexController = {
             const query = await db("gameStatus").where('id', 1).limit(1);
             return res.status(200).send({status: !!query[0].open})
         }catch (e) {
-            console.log(e);
+            logger.error(e);
             return res.status(400).send("Could not fetch game status")
         }
     },
@@ -45,7 +47,7 @@ const indexController = {
             await db('gameStatus').where('id', 1).update({open: status})
             return res.status(200).end();
         }catch (e) {
-            console.log(e);
+            logger.error(e);
             return res.status(400).send("Could not set game status")
         }
     },
@@ -53,14 +55,34 @@ const indexController = {
 
 // paystack Webhook
     paystack: async (req, res) => {
-            //validate event
+            //validate request
             const hash = crypto.createHmac('sha512', secret).update(JSON.stringify(req.body)).digest('hex');
             if (hash.toString() !== req.headers['x-paystack-signature'].toString()) {
-                return res.status(400).end();
+                return res.status(400).send('fuck you');
             }
 
-        const event = req.body;
+        try {
+
+            const data = req.body;
+            //Success response
+            if (data.event === "charge.success" || data.event === "transfer.success"){
+                await db('transactions').where('referenceNumber', data.data.reference)
+                    .update({status: 'successful'})
+
+                //failed response
+            }else if (data.event === "transfer.failed" || data.event === "transfer.reversed"){
+                await db('transactions').where('referenceNumber', data.data.reference)
+                    .update({status: 'failed'})
+            }
+
+
             res.status(200).end();
+
+        }catch (e) {
+            logger.error(e)
+            res.status(400).end();
+        }
+
 
 
     }

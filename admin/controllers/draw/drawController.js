@@ -1,5 +1,6 @@
 const db = require("../../../config/db");
 const { calculateWinnings } = require("../../../functions/index");
+const logger = require("../../../winston");
 
 const drawController = {
 
@@ -23,7 +24,7 @@ const drawController = {
                 totalRecords: total[0].total
             });
         }catch (e) {
-            console.log(e);
+            logger.error(e);
             return res.status(400).send("Sorry your request was not successful");
         }
     },
@@ -43,7 +44,7 @@ const drawController = {
 
         }catch (e) {
             if (e.code === 'ER_DUP_ENTRY') return res.status(400).send('You have already entered Draw numbers for this Date');
-            console.log(e);
+            logger.error(e);
             return res.status(400).send("Sorry your request was not successful");
         }
     },
@@ -55,7 +56,7 @@ const drawController = {
             await db('machineNumbers').where('id', req.body.id).del();
             return res.status(200).end();
         }catch (e) {
-            console.log(e);
+            logger.error(e);
             return res.status(400).send("Sorry your request was not successful");
         }
     },
@@ -139,7 +140,7 @@ const drawController = {
 
             })
         }catch (e) {
-            console.log(e);
+            logger.error(e);
             return res.status(400).send("Sorry your request was not successful");
         }
     }

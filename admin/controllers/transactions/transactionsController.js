@@ -1,4 +1,5 @@
 const db = require("../../../config/db");
+const logger = require("../../../winston");
 
 const transactionsController = {
 
@@ -10,7 +11,7 @@ const transactionsController = {
 
            const transactions = await db.select('users.phone', 'transactions.id',
                'transactions.transactionType', 'transactions.amount', 'transactions.status',
-               'transactions.network', 'transactions.createdAt',
+               'transactions.referenceNumber', 'transactions.createdAt',
                db.raw('COUNT(*) OVER () as total'))
                 .from('transactions')
                 .leftJoin('users', 'users.id', 'transactions.userId')
@@ -29,7 +30,7 @@ const transactionsController = {
 
 
         }catch (e) {
-            console.log(e);
+            logger.error(e);
             return res.status(400).send("Sorry your request was not successful");
         }
     },

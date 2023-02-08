@@ -1,12 +1,12 @@
 const db = require("../../../config/db");
 const { stakeFunction } = require("../../../functions");
+const logger = require("../../../winston");
 
 const lotteryController = {
 
     stake: async (req, res) => {
 
         try {
-
                                //.............Game status..............
 
             //if the time is >= 7pm Close the game;
@@ -56,7 +56,7 @@ const lotteryController = {
 
 
         }catch (e) {
-                console.log(e);
+                logger.error(e);
                 return res.status(400).send("Sorry your request was not successful");
         } // ./Catch block
 

@@ -1,5 +1,5 @@
 const db = require("../../config/db");
-const config = require("../../config/config");
+const logger = require("../../winston");
 
 const dashboardController = {
     index: async (req, res) => {
@@ -44,7 +44,7 @@ const dashboardController = {
                 annualWinnings: annualWinningsQuery.length ? annualWinningsQuery[0].total : 0
             })
         }catch (e) {
-            console.log(e);
+            logger.error(e);
             return res.status(400).send("Sorry your request was not successful");
         }
     }

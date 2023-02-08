@@ -2,23 +2,37 @@ const db = require("../../../../config/db");
 const bcrypt = require("bcryptjs");
 const config = require("../../../../config/config");
 const jwt = require("jsonwebtoken");
-const { generateRandomNumber, convertNetwork } = require("../../../../functions");
+const { generateRandomNumber, getBankCode } = require("../../../../functions");
 const axios = require("axios");
+const  logger = require("../../../../winston");
 
-const notVerifiedError = 'Sorry, this mobile money number cannot be verified';
+const notVerifiedError = 'Sorry, this is not a valid momo number or not registered on this network';
 
 const userAuthController = {
 
     //......................Verify phone number...........................
     verify: async (req, res) => {
-        const {phoneNumber, network} = req.body;
+        const {phoneNumber, network, password } = req.body;
         const regex = /^(?=.{6,})(?=.*[!@#$%^&*()\\[\]{}\-_+=~`|:;"'<>,./?])/
 
 
         try {
 
+            // validation
+            if (phoneNumber.toString().length  !== 9 )return res.status(400).send("Please check phone number");
+
+            if (!password || !password.match(regex)) return res.status(400).send("Minimum password length should be 6 and contains at least 1 special character");
+
+            //Check if user already exists
+            const user = await db("users").where("phone", phoneNumber)
+                .select('id','phone').limit(1);
+
+            if (user.length) return res.status(400).send("Sorry, this number already exists")
+
+
+
             //Verify Phone number
-            let bankCode = convertNetwork(network);
+            let bankCode = getBankCode(network);
             await axios.get(
                 `https://api.paystack.co/bank/resolve`,
                 {
@@ -34,19 +48,8 @@ const userAuthController = {
                 throw new Error(notVerifiedError)
             })
 
-            return res.status(200).send({message: 202020})
+            if (process.env.NODE_ENV !== 'production') return res.status(200).send({message: 202020})
 
-
-            // validation
-            if (phoneNumber.toString().length  !== 9 )return res.status(400).send("Please check phone number");
-
-            if (!password || !password.match(regex)) return res.status(400).send("Minimum password length should be 6 and contains at least 1 special character");
-
-            //Check if user already exists
-            const user = await db("users").where("phone", phoneNumber)
-                .select('id','phone').limit(1);
-
-            if (user.length) return res.status(400).send("Sorry, this number already exists")
 
             //generate verification code
             const verificationCode = generateRandomNumber();
@@ -59,13 +62,11 @@ const userAuthController = {
             const sender = config.SMS_SENDER;
 
             //message to send to recipient
-            const sms = `Your Nanty Verification code is: ${verificationCode}`;
+            const sms = `Your Verification code is: ${verificationCode}`;
 
             //International format (233) or (+233)
             const recipient= '233'+phoneNumber;
 
-            //encoding sender string to UTF-8 encoding
-            const senderEncode= encodeURI(sender);
 
             const url = `https://sms.textcus.com/api/send?apikey=${smsApiKey}&destination=${recipient}&source=${sender}&dlr=1&type=0&message=${sms}`;
 
@@ -75,14 +76,14 @@ const userAuthController = {
             })
 
                 .catch((err) => {
-                    console.log(err)
+                    logger.error(err)
                     return res.status(400).send("Failed to send verification code. Please contact Admin");
                 })
 
 
         }catch (e) {
             if (e.message === notVerifiedError) return  res.status(400).send(notVerifiedError);
-            console.log(e)
+            logger.error(e)
             return res.status(400).send("Sorry your request was not successful");
         } // ./Catch block
     }, // ./Verify
@@ -106,7 +107,7 @@ const userAuthController = {
             var salt = await bcrypt.genSaltSync(10);
             var hash = await bcrypt.hashSync(password, salt);
             if (!hash) {
-                console.log("password hash was not successful");
+                logger.info("password hash was not successful");
                 return res.status(400).send("Sorry something went wrong");
             }
             const specialCode = generateRandomNumber();
@@ -126,7 +127,7 @@ const userAuthController = {
 
         }catch (e) {
             if (e.code === 'ER_DUP_ENTRY') return res.status(400).send('Sorry, this number already exists');
-            console.log(e);
+            logger.error(e);
             return res.status(400).send("Sorry your request was not successful");
 
         } // ./Catch block
@@ -176,7 +177,7 @@ const userAuthController = {
             })
 
         }catch (e) {
-            console.log(e);
+            logger.error(e);
             return res.status(400).send("Sorry your request was not successful");
         } // ./Catch block
     }, // ./Login
@@ -198,7 +199,7 @@ const userAuthController = {
             await db('users').where({phone: phoneNumber})
                 .update({passwordResetCode: code})
 
-            return res.status(200).end()
+            if (process.env.NODE_ENV !== 'production') return res.status(200).end()
 
             //...........................Send sms to phone number.....................
             const smsApiKey = config.SMS_API_KEY;
@@ -212,9 +213,6 @@ const userAuthController = {
             //International format (233) or (+233)
             const recipient= '233'+phoneNumber;
 
-            //encoding sender string to UTF-8 encoding
-            const senderEncode= encodeURI(sender);
-
             const url = `https://sms.textcus.com/api/send?apikey=${smsApiKey}&destination=${recipient}&source=${sender}&dlr=1&type=0&message=${sms}`;
 
             axios.get(url).then(response=> {
@@ -223,12 +221,12 @@ const userAuthController = {
             })
 
                 .catch((err) => {
-                    console.log(err)
+                    logger.error(err)
                     return res.status(400).send("Failed to send password reset code. Please contact Admin");
                 })
 
         }catch (e) {
-            console.log(e);
+            logger.error(e);
             return res.status(400).send("Sorry your request was not successful");
         }
     },
@@ -262,7 +260,7 @@ const userAuthController = {
             var salt = await bcrypt.genSaltSync(10);
             var hash = await bcrypt.hashSync(password, salt);
             if (!hash) {
-                console.log("password hash was not successful");
+                logger.info("password hash was not successful");
                 return res.status(400).send("Sorry something went wrong Please try again later");
             }
 
@@ -275,7 +273,7 @@ const userAuthController = {
             res.status(200).end();
 
         }catch (e) {
-            console.log(e);
+            logger.error(e);
             return res.status(400).send("Sorry your request was not successful");
         }
     }

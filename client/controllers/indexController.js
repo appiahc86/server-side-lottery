@@ -1,4 +1,6 @@
 const db = require("../../config/db");
+const logger = require("../../winston");
+
 
 
 const indexController = {
@@ -9,14 +11,18 @@ const indexController = {
 
             images =  JSON.parse(query[0][0].images) || [];
 
+
             if (images.length){
                 images.map(image => {
-                    return image.name = `http://${req.headers.host}/images/${image.name}`; //todo change to https
+                    if (process.env.NODE_ENV !== 'production')
+                    return image.name = `http://${req.headers.host}/images/${image.name}`;
+                    else   return image.name = `https://${req.headers.host}/images/${image.name}`;
                 })
             }
+
             res.status(200).send({images, day: new Date().getDay()});
         }catch (e) {
-            console.log(e);
+            logger.error(e);
             return res.status(204).end();
         }
     },
@@ -30,12 +36,11 @@ const indexController = {
             res.status(200).send({gameResults: query, day: new Date().getDay()});
 
         }catch (e) {
-            console.log(e);
+            logger.error(e);
             return res.status(400).send('Sorry, Could not get game results');
         }
     }
 }
-
 
 
 module.exports = indexController;

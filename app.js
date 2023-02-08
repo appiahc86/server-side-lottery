@@ -8,8 +8,10 @@ const runMigration = require("./models/index");
 const runTriggers = require("./models/triggers/index");
 const db = require("./config/db");
 const uploader = require("express-fileupload");
-const winston = require('winston');
+const logger = require("./winston");
 const transactionJob = require("./cron");
+
+
 
 // express-fileupload middleware
 app.use(
@@ -23,41 +25,9 @@ app.use(
 app.use(express.json());
 app.use(cors());
 
-
 //Run cron jobs
 transactionJob.start();
 
-
-//Use winston
-// const logger = winston.createLogger({
-//     level: 'error',
-//     transports: [
-//         new winston.transports.File({ filename: 'error.log' })
-//     ]
-// });
-const logger = winston.createLogger({
-    level: 'info',
-    format: winston.format.json(),
-    defaultMeta: { service: 'user-service' },
-    transports: [
-        //
-        // - Write all logs with importance level of `error` or less to `error.log`
-        // - Write all logs with importance level of `info` or less to `combined.log`
-        //
-        new winston.transports.File({ filename: 'error.log', level: 'error',  format: winston.format.json() }),
-        new winston.transports.File({ filename: 'combined.log', level: 'info',  format: winston.format.json() }),
-    ],
-});
-
-//
-// If we're not in production then log to the `console` with the format:
-// `${info.level}: ${info.message} JSON.stringify({ ...rest }) `
-//
-if (process.env.NODE_ENV !== 'production') {
-    logger.add(new winston.transports.Console({
-        format: winston.format.simple(),
-    }));
-}
 
 //Set TimeZone
 process.env.TZ = 'Africa/Accra';
@@ -85,17 +55,16 @@ const io = socketio(server, {
 //Socket.io Connection
 io.on('connection', (socket) => {
 
-    //Broadcast number of users
-    // io.emit('onlineUsers', io.sockets.adapter.rooms.size);
-    io.emit('onlineUsers', socket.adapter.sids.size);
+    //Send number of users online to admin users
+    io.to("admin-users").emit('onlineUsers', socket.adapter.sids.size)
 
-
-        //Send Date and time
-        io.emit('time', {eventTime:'2023-01-10T14:48:00.661Z', timeNow: new Date()});
+    socket.on("join-admin-users", (args) => {
+        socket.join('admin-users');
+        io.to("admin-users").emit('onlineUsers', socket.adapter.sids.size)
+    })
 
     //disconnect
     socket.on('disconnect', () => {
-        // io.emit('onlineUsers', io.sockets.adapter.rooms.size);
         io.emit('onlineUsers', socket.adapter.sids.size);
     })
 
@@ -123,7 +92,7 @@ const uploadRouter = require("./admin/routes/uploads/uploadRouter");
 const drawRouter = require("./admin/routes/draw/drawRouter");
 const transactionsRouter = require("./admin/routes/transactions/transactionsRouter");
 const dashboardRouter = require("./admin/routes/dashboardRouter");
-const {log} = require("winston");
+
 
 //Use Admin routes
 app.use("/admin/users/auth", adminUserAuthRouter);
@@ -151,14 +120,14 @@ app.use((err, req, res, next) => {
 
 app.use((err, req, res, next) => {
     if(err){
-        console.log(err);
+        logger.error(err);
         res.status(400).send("Sorry and error occurred");
     }
     next()
 })
 
-
-server.listen(port, () => {
-    console.log(`server running on port ${port}`);
-})
-// server.listen();
+if (process.env.NODE_ENV !== 'production'){
+    server.listen(port, () => {
+        logger.info(`server running on port ${port}`);
+    })
+}else server.listen();
