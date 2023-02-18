@@ -6,6 +6,7 @@ const Image = async () => {
         await db.schema.createTable('images', table => {
             table.increments('id').primary();
             table.json('list');
+            table.engine('InnoDB');
         });
 
         await db('images').insert({list: JSON.stringify([])})

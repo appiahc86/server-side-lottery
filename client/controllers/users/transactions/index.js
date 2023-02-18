@@ -3,6 +3,7 @@ const config = require("../../../../config/config");
 const axios = require('axios');
 const logger = require("../../../../winston");
 const { getBankCode, convertNetwork, generateReferenceNumber } = require("../../../../functions/index");
+const moment = require("moment");
 let errorMessage = 'Sorry, this is not a valid momo number or not registered on this network';
 
 
@@ -28,7 +29,12 @@ const userTransactions  = {
 
         try {
 
-           //Validation
+            //Check if Deposits are disabled by admin
+            const settings = await db('settings').where('id', 1);
+            if (!!settings[0].deposits === false) return res.status(400).send(`Sorry Deposits have been disabled by admin`);
+
+
+            //Validation
             if (amount < 1) return res.status(400).send("Minimum amount should be 1");
             if (amount > 2000) return res.status(400).send("Maximum amount should be 2,000");
 
@@ -37,7 +43,8 @@ const userTransactions  = {
                 email: config.PAYMENT_EMAIL,
                 currency: "GHS",
                 mobile_money: {
-                phone : process.env.NODE_ENV !== 'production' ? "0551234987" : "0"+req.user.phone,
+                phone : "0551234987",
+                // phone : "0"+req.user.phone, //TODO enable this in production
                 provider : convertNetwork(network)
             }
             }
@@ -65,30 +72,42 @@ const userTransactions  = {
                     amount: parseFloat(amount),
                     network,
                     status: 'pending',
-                    transactionDate: new Date(),
-                    createdAt: new Date()
+                    transactionDate: moment().format("YYYY-MM-DD"),
+                    createdAt: moment().format("YYYY-MM-DD HH:mm:ss")
+                })
+
+                //insert into transaction logs table
+                await trx("transactionLogs").insert({
+                    userId: req.user.id,
+                    type: "deposit",
+                    amount: parseFloat(amount),
+                    oldBalance: req.user.balance,
+                    newBalance: parseFloat( req.user.balance) + parseFloat(amount),
+                    date: moment().format("YYYY-MM-DD"),
+                    createdAt: moment().format("YYYY-MM-DD HH:mm:ss")
                 })
 
                 return res.status(200).send({
                     reference: response.data.data.reference,
                     network: network,
-                    display_text: process.env.NODE_ENV !== 'production' ? 'Continue payment on your phone' : response.data.data.display_text
+                    display_text: 'Continue payment on your phone'
+                    // display_text:  response.data.data.display_text  Todo Enable this in production
                 });
 
             }
             else {
                 logger.info(response.data);
-                return res.status(400).send("Sorry payment request was refused");
+                return res.status(400).send("Sorry deposit request was refused");
             }
 
             })
 
 
         }catch (e) {
+            logger.error(e.message);
             if (e.response){
                 return res.status(400).send(e.response.data.message);
             }
-            logger.error(e.message);
             return res.status(400).send("Sorry your deposit request was not successful");
         }
 
@@ -105,6 +124,10 @@ const userTransactions  = {
         if (network !== req.user.network) return res.status(400).send(`Please select ${req.user.network} as network`);
 
         try {
+
+            //Check if withdrawals are disabled by admin
+            const settings = await db('settings').where('id', 1);
+            if (!!settings[0].withdrawals === false) return res.status(400).send(`Sorry withdrawals have been disabled by admin`);
 
                 let bankCode = getBankCode(network);
 
@@ -127,7 +150,7 @@ const userTransactions  = {
                     }
                 ).then(response => {
                     if (response.data.status !== true) return res.status(400).send(errorMessage)
-                    if (response.data.data.account_number.toString() === '0'+req.user.phone){
+                    if (response.data.status === true && response.data.data.account_number.toString() === '0'+req.user.phone){
                         transferRecipientData.name = response.data.data.account_name;
                     }else return res.status(400).send(errorMessage)
                 }).catch(e => {
@@ -194,18 +217,28 @@ const userTransactions  = {
                             transactionType: 'withdrawal',
                             amount: parseFloat(amount),
                             network,
-                            transactionDate: new Date(),
-                            createdAt: new Date()
+                            transactionDate: moment().format("YYYY-MM-DD"),
+                            createdAt: moment().format("YYYY-MM-DD HH:mm:ss")
                         })
 
-                    })// ./transaction
+                        //insert into transaction logs table
+                        await trx("transactionLogs").insert({
+                            userId: req.user.id,
+                            type: "withdrawal",
+                            amount: parseFloat(amount),
+                            oldBalance: req.user.balance,
+                            newBalance: parseFloat( req.user.balance) - parseFloat(amount),
+                            date: moment().format("YYYY-MM-DD"),
+                            createdAt: moment().format("YYYY-MM-DD HH:mm:ss")
+                        })
+
+
+                })// ./transaction
                     return res.status(200).send({balance: (parseFloat(req.user.balance) - parseFloat(amount))});
                 }else {
                     logger.info(response.data)
                     return res.status(400).send("Sorry, withdrawal request was not successful. Please contact admin ")
                 }
-
-
 
 
         }catch (e) {

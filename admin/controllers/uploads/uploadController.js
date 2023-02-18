@@ -110,8 +110,7 @@ const uploadController = {
             //delete image from hard disk
              fs.unlink(uploadDir + image.name, (err) => {
                  if (err) {
-                     logger.error(err) ;
-                     return res.status(400).send("Sorry, failed to remove image");
+                     logger.error(err);
                  }
              });
 
@@ -126,7 +125,7 @@ const uploadController = {
                 .update({list: JSON.stringify(updated)});
            return  res.status(200).send({images: updated});
         }catch (e) {
-            logger.error(e);
+            logger.error('uploads Controller', e);
             return res.status(400).send("Sorry your request was not successful");
         }
     },

@@ -1,5 +1,6 @@
 const db = require("../../config/db");
 const logger = require("../../winston");
+const moment = require("moment");
 
 
 
@@ -20,7 +21,7 @@ const indexController = {
                 })
             }
 
-            res.status(200).send({images, day: new Date().getDay()});
+            res.status(200).send({images, date: moment()});
         }catch (e) {
             logger.error(e);
             return res.status(204).end();
@@ -33,7 +34,7 @@ const indexController = {
             const query = await db('machineNumbers').select('drawDate', 'numbers')
                 .orderBy('id', 'DESC').limit(1);
 
-            res.status(200).send({gameResults: query, day: new Date().getDay()});
+            res.status(200).send({gameResults: query, date: moment()});
 
         }catch (e) {
             logger.error(e);

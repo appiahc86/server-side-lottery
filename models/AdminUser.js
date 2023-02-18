@@ -13,6 +13,7 @@ const AdminUser = async () => {
             table.string('passwordResetCode', 10);
             table.boolean('isActive').defaultTo(true);
             table.timestamp('createdAt').defaultTo(db.fn.now());
+            table.engine('InnoDB');
         });
 
 

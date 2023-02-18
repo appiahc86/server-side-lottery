@@ -10,6 +10,9 @@ router.post('/numbers', auth, drawController.create);
 //Get draw numbers
 router.get('/numbers', auth, drawController.index);
 
+//Edit draw numbers
+router.patch('/numbers', auth, drawController.edit);
+
 //Delete draw
 router.post('/delete', auth, drawController.destroy);
 

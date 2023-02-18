@@ -5,6 +5,7 @@ const jwt = require("jsonwebtoken");
 const { generateRandomNumber, getBankCode } = require("../../../../functions");
 const axios = require("axios");
 const  logger = require("../../../../winston");
+const moment = require("moment");
 
 const notVerifiedError = 'Sorry, this is not a valid momo number or not registered on this network';
 
@@ -13,7 +14,7 @@ const userAuthController = {
     //......................Verify phone number...........................
     verify: async (req, res) => {
         const {phoneNumber, network, password } = req.body;
-        const regex = /^(?=.{6,})(?=.*[!@#$%^&*()\\[\]{}\-_+=~`|:;"'<>,./?])/
+        const regex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).{6,}$/;
 
 
         try {
@@ -21,7 +22,7 @@ const userAuthController = {
             // validation
             if (phoneNumber.toString().length  !== 9 )return res.status(400).send("Please check phone number");
 
-            if (!password || !password.match(regex)) return res.status(400).send("Minimum password length should be 6 and contains at least 1 special character");
+            if (!password || !password.match(regex)) return res.status(400).send("Password does not meet requirements");
 
             //Check if user already exists
             const user = await db("users").where("phone", phoneNumber)
@@ -93,14 +94,14 @@ const userAuthController = {
     create: async (req, res) => {
         const {phoneNumber, password, network } = req.body;
 
-        const regex = /^(?=.{6,})(?=.*[!@#$%^&*()\\[\]{}\-_+=~`|:;"'<>,./?])/
+        const regex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).{6,}$/;
 
         try {
 
             // validation
             if (phoneNumber.toString().length  !== 9 )return res.status(400).send("Please check phone number");
 
-            if (!password || !password.match(regex)) return res.status(400).send("Minimum password length should be 6 and contains at least 1 special character");
+            if (!password || !password.match(regex)) return res.status(400).send("Password does not meet requirements");
 
 
             //Hash password
@@ -118,7 +119,7 @@ const userAuthController = {
                 password: hash,
                 specialCode,
                 network,
-                createdAt: new Date()
+                createdAt: moment().format("YYYY-MM-DD HH:mm:ss")
             });
 
            const token = jwt.sign({ id: user[0], specialCode: specialCode }, config.JWT_SECRET);
@@ -244,14 +245,14 @@ const userAuthController = {
              if (query[0].passwordResetCode.toString() !== passwordResetCode.toString()) return res.status(400).send("Sorry, you entered a wrong code. Please check you phone");
 
 
-            const regex = /^(?=.{6,})(?=.*[!@#$%^&*()\\[\]{}\-_+=~`|:;"'<>,./?])/
+            const regex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).{6,}$/;
             // validation
 
             if (validateRequestCode !== "9#45$!")return res.status(400).send("Origin could not be verified");
 
             if (phoneNumber.toString().length  !== 9 )return res.status(400).send("Please check phone number");
 
-            if (!password || !password.match(regex)) return res.status(400).send("Minimum password length should be 6 and contains at least 1 special character");
+            if (!password || !password.match(regex)) return res.status(400).send("Password does not meet requirements");
 
             const user = await db("users").where({phone: phoneNumber}).limit(1);
             if (!user.length) return res.status(400).send("Sorry, user was not found");

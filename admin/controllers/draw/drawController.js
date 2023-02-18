@@ -1,6 +1,7 @@
 const db = require("../../../config/db");
 const { calculateWinnings } = require("../../../functions/index");
 const logger = require("../../../winston");
+const moment = require("moment");
 
 const drawController = {
 
@@ -31,15 +32,40 @@ const drawController = {
 
     //Save draw numbers
     create: async (req, res) => {
-        const { drawNumbers, date } = req.body;
-        if (drawNumbers.length !== 5) return res.status(400).send('Draw numbers must be up to 5 numbers');
+        const { drawNumbers, machineNumbers, date } = req.body;
+
+        //.......................validation.................................
+
+        //Draw numbers
+        let duplicates = [];
+        for (const drawNumber of drawNumbers) {
+            if (typeof drawNumber !== "number") return res.status(400).send("Provided data is invalid");
+            if (!drawNumber) return res.status(400).send("Draw numbers must be 5");
+            if (drawNumber < 1 || drawNumber > 90) return res.status(400).send("Invalid draw numbers");
+            if (duplicates.includes(drawNumber)) return res.status(400).send("You cannot select same number twice");
+            duplicates.push(drawNumber);
+        }
+        if (drawNumbers.length !== 5) return res.status(400).send("Draw numbers must be 5");
+
+        //Machine numbers
+        let testDuplicates = [];
+        for (const machineNumber of machineNumbers) {
+            if (typeof machineNumber !== "number") return res.status(400).send("You data is invalid");
+            if (!machineNumber) return res.status(400).send("Machine numbers must be 5");
+            if (machineNumber < 1 || machineNumber > 90) return res.status(400).send("Invalid machine numbers");
+            if (testDuplicates.includes(machineNumber)) return res.status(400).send("You cannot select same number twice");
+            testDuplicates.push(machineNumber);
+        }
+
+        if (machineNumbers.length !== 5) return res.status(400).send("Machine numbers must be 5");
 
         try {
-
             await db('machineNumbers').insert({
-                drawDate: date ? date : new Date(),
-                numbers: JSON.stringify(drawNumbers)
+                drawDate: date ? date : moment().format("YYYY-MM-DD"),
+                numbers: JSON.stringify(drawNumbers),
+                machineNumbers: JSON.stringify(machineNumbers)
             })
+
             return res.status(200).end();
 
         }catch (e) {
@@ -48,6 +74,49 @@ const drawController = {
             return res.status(400).send("Sorry your request was not successful");
         }
     },
+
+
+    edit: async (req, res) => {
+        const { id, drawNumbers, machineNumbers } = req.body;
+        //.......................validation.................................
+
+        //Draw numbers
+        let duplicates = [];
+        for (const drawNumber of drawNumbers) {
+            if (typeof drawNumber !== "number") return res.status(400).send("You data is invalid");
+            if (!drawNumber) return res.status(400).send("Draw numbers must be 5");
+            if (drawNumber < 1 || drawNumber > 90) return res.status(400).send("Invalid draw numbers");
+            if (duplicates.includes(drawNumber)) return res.status(400).send("You cannot select same number twice");
+            duplicates.push(drawNumber);
+        }
+        if (drawNumbers.length !== 5) return res.status(400).send("Draw numbers must be 5");
+
+        //Machine numbers
+        let testDuplicates = [];
+        for (const machineNumber of machineNumbers) {
+            if (typeof machineNumber !== "number") return res.status(400).send("You data is invalid");
+            if (!machineNumber) return res.status(400).send("Machine numbers must be 5");
+            if (machineNumber < 1 || machineNumber > 90) return res.status(400).send("Invalid machine numbers");
+            if (testDuplicates.includes(machineNumber)) return res.status(400).send("You cannot select same number twice");
+            testDuplicates.push(machineNumber);
+        }
+
+        if (machineNumbers.length !== 5) return res.status(400).send("Machine numbers must be 5");
+
+        try {
+            await db('machineNumbers').where('id', id)
+                .update({
+                    numbers: JSON.stringify(drawNumbers),
+                    machineNumbers: JSON.stringify(machineNumbers)
+                });
+
+            return res.status(200).end();
+        }catch (e) {
+            logger.error(e);
+            return res.status(400).send("Sorry your request was not successful");
+        }
+    },
+
 
 
     //delete draw
@@ -60,7 +129,6 @@ const drawController = {
             return res.status(400).send("Sorry your request was not successful");
         }
     },
-
 
 
 
@@ -86,7 +154,7 @@ const drawController = {
             const tickets = await trx('tickets')
                 .where({ticketDate: queryDrawNumbers[0].drawDate})
                 .select('id as ticketId', 'userId',
-                    'numbers', 'amount', 'ticketDate');
+                    'numbers', 'amount', 'payable','ticketDate');
 
             //If no tickets were found
             if (!tickets.length){
@@ -110,10 +178,11 @@ const drawController = {
                          //If 2 or more numbers found
                     if (numbersInDrawNumber.length > 1){
                         ticket.amountWon = calculateWinnings(numbersInDrawNumber.length, ticket.amount);
-                        ticket.createdAt = new Date();
+                        ticket.createdAt =  moment().format("YYYY-MM-DD HH:mm:ss");
                         ticket.numbers = JSON.stringify(ticket.numbers);
                         delete ticket.amount;
-                        winners.push(ticket)
+                        delete  ticket.payable;
+                        winners.push(ticket);
                     }
 
                 }
@@ -144,6 +213,9 @@ const drawController = {
             return res.status(400).send("Sorry your request was not successful");
         }
     }
+
+
+
 }
 
 

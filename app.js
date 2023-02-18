@@ -32,14 +32,15 @@ transactionJob.start();
 //Set TimeZone
 process.env.TZ = 'Africa/Accra';
 
-//Create database tables
+
+    //Create database tables
 (async () => {
+    // await db.raw(`SET time_zone = 'UTC';`);
     await db.raw("SET FOREIGN_KEY_CHECKS=0");
     await runMigration();
     await runTriggers();
     await db.raw("SET FOREIGN_KEY_CHECKS=1");
 })()
-
 
 const port = process.env.port || 3000;
 
@@ -70,6 +71,13 @@ io.on('connection', (socket) => {
 
 })
 
+//Add io instance to each request
+app.use((req, res, next) => {
+    req.io = io;
+    next();
+})
+
+
 //Load routes
 const lotteryRouter = require("./client/routes/lottery/index");
 const userAuthRouter = require("./client/routes/users/auth/userAuthRoutes");
@@ -92,6 +100,8 @@ const uploadRouter = require("./admin/routes/uploads/uploadRouter");
 const drawRouter = require("./admin/routes/draw/drawRouter");
 const transactionsRouter = require("./admin/routes/transactions/transactionsRouter");
 const dashboardRouter = require("./admin/routes/dashboardRouter");
+const settingsRouter = require("./admin/routes/settings/settingsRouter");
+const ticketsRouter = require("./admin/routes/tickets/ticketsRouter");
 
 
 //Use Admin routes
@@ -102,6 +112,8 @@ app.use("/admin/uploads", uploadRouter);
 app.use("/admin/draw", drawRouter);
 app.use("/admin/transactions", transactionsRouter);
 app.use("/admin/dashboard", dashboardRouter);
+app.use("/admin/settings", settingsRouter);
+app.use("/admin/tickets", ticketsRouter);
 
 app.use(express.static('public'));
 
@@ -113,18 +125,11 @@ app.use((req, res, next) => {
 
 //Handle errors
 app.use((err, req, res, next) => {
+
     logger.error(err.message, err);
     res.status(400).send('Sorry, something went wrong');
-    next();
 });
 
-app.use((err, req, res, next) => {
-    if(err){
-        logger.error(err);
-        res.status(400).send("Sorry and error occurred");
-    }
-    next()
-})
 
 if (process.env.NODE_ENV !== 'production'){
     server.listen(port, () => {

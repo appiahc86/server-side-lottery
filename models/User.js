@@ -4,7 +4,7 @@ const User = async () => {
     if (!await db.schema.hasTable('users')){
 
         await db.schema.createTable('users', table => {
-            table.increments('id').primary();
+            table.bigIncrements('id').primary();
             table.string('phone', 15).unique();
             table.enum('network', ['mtn', 'vodafone', 'airtelTigo']).notNullable();
             table.decimal('balance').defaultTo(0).unsigned();
@@ -14,6 +14,7 @@ const User = async () => {
             table.string('recipientCode').nullable();
             table.boolean('isActive').defaultTo(true);
             table.timestamp('createdAt').defaultTo(db.fn.now());
+            table.engine('InnoDB');
         });
 
 

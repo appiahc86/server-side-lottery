@@ -2,17 +2,16 @@ const winston = require('winston');
 const { createLogger, format, transports } = winston;
 
 const logger = createLogger({
+    // level: 'info',
     format: format.combine(
         format.timestamp({
             format: 'YYYY-MM-DD HH:mm:ss'
         }),
-        format.colorize(),
+        format.errors({ stack: true }),
         format.json(),
         format.prettyPrint(),
     ),
-    transports: [
-
-    ]
+    transports: []
 });
 
 if (process.env.NODE_ENV !== 'production') {
@@ -24,7 +23,7 @@ if (process.env.NODE_ENV !== 'production') {
     }));
 }else {
     logger.add(new transports.File({ filename: './logs/error.log', level: 'error' }));
-     logger.add( new transports.File({filename: './logs/combined.log', level: 'info'}))
+    logger.add( new transports.File({filename: './logs/combined.log', level: 'info'}))
 }
 
 

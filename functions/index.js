@@ -11,8 +11,15 @@ const generateRandomNumber = () => {
 }
 
 //calculate winnings
-const calculateWinnings = (totalNumbers, amount) => {
-    return totalNumbers * amount;
+const calculateWinnings = (chosenNumbers, amount) => {
+
+    if (chosenNumbers === 2) return amount * 200  //This is for 2 sure
+
+    if (chosenNumbers === 3) return amount * 2000;  //if 3 numbers won
+    if (chosenNumbers === 4) return amount * 5500;  //if 4 numbers won
+    if (chosenNumbers === 5) return amount * 40000;  //if 5 numbers won
+
+    return 0;
 }
 
 //get bank code by network
@@ -65,6 +72,9 @@ const generateReferenceNumber = (date) => {
     return `${year}${month}${day}${hour}${minutes}${seconds}${milliseconds}wtd`;
 }
 
+
+
 module.exports = {
-    stakeFunction, generateRandomNumber, calculateWinnings, getBankCode, convertNetwork, generateReferenceNumber
+    stakeFunction, generateRandomNumber, calculateWinnings, getBankCode,
+    convertNetwork, generateReferenceNumber
 }

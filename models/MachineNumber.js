@@ -7,7 +7,9 @@ const MachineNumber = async () => {
             table.increments('id').primary();
             table.date('drawDate').unique().notNullable();
             table.json('numbers').notNullable();
+            table.json('machineNumbers');
             table.boolean('closed').defaultTo(false);
+            table.engine('InnoDB');
         });
 
     }

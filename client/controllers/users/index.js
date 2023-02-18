@@ -11,10 +11,14 @@ const userIndexController = {
     //View Tickets
     viewTickets: async (req, res) => {
         try {
-            const data = await db("tickets").where('userId', req.user.id)
-                .select( 'id','numbers', 'ticketDate',
-                    'ticketStatus', 'amount')
-                .orderBy('id', 'desc').limit(20);
+            const data = await db.select( 'tickets.id','tickets.numbers', 'tickets.ticketDate',
+                    'tickets.ticketStatus', 'tickets.amount',
+                'tickets.payable', 'winners.amountWon')
+                .from('tickets')
+                .leftJoin('winners', 'winners.ticketId', 'tickets.id')
+                .where('tickets.userId', req.user.id)
+                .orderBy('tickets.id', 'desc').limit(20);
+
 
             res.status(200).send({data});
 

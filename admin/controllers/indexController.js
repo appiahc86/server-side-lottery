@@ -29,30 +29,6 @@ const indexController = {
     },
 
 
-    //get game status
-    getGameStatus: async (req, res)  => {
-        try {
-            const query = await db("gameStatus").where('id', 1).limit(1);
-            return res.status(200).send({status: !!query[0].open})
-        }catch (e) {
-            logger.error(e);
-            return res.status(400).send("Could not fetch game status")
-        }
-    },
-
-    //set game status
-    setGameStatus: async (req, res)  => {
-        try {
-            const status = req.body.status;
-            await db('gameStatus').where('id', 1).update({open: status})
-            return res.status(200).end();
-        }catch (e) {
-            logger.error(e);
-            return res.status(400).send("Could not set game status")
-        }
-    },
-
-
 // paystack Webhook
     paystack: async (req, res) => {
             //validate request
@@ -64,6 +40,7 @@ const indexController = {
         try {
 
             const data = req.body;
+
             //Success response
             if (data.event === "charge.success" || data.event === "transfer.success"){
                 await db('transactions').where('referenceNumber', data.data.reference)
