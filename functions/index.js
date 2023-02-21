@@ -1,3 +1,5 @@
+const moment = require("moment");
+
 // calculates amount payable during stake
 const stakeFunction = (selectedNumbers, amount) => {
     const determiner = selectedNumbers - 1;
@@ -55,18 +57,18 @@ const convertNetwork = (newtwork) => {
 
 //Generate reference number for withdrawals
 const generateReferenceNumber = (date) => {
-    let year = new Date(date).getFullYear();
-    let month = new Date(date).getMonth() + 1;
+    let year = moment(date).year();
+    let month = moment(date).month() + 1;
     month = month < 10 ? `0${month}` : month;
-    let day = new Date(date).getDate();
+    let day = moment(date).date();
     day = day < 10 ? `0${day}` : day;
-    let hour = new Date(date).getHours();
+    let hour = moment(date).hours();
     hour = hour < 10 ? `0${hour}` : hour;
-    let minutes = new Date(date).getMinutes();
+    let minutes = moment(date).minutes();
     minutes = minutes < 10 ? `0${minutes}` : minutes;
-    let seconds = new Date(date).getSeconds();
+    let seconds = moment(date).seconds();
     seconds = seconds < 10 ? `0${seconds}` : seconds;
-    let milliseconds = new Date(date).getMilliseconds();
+    let milliseconds = moment(date).milliseconds();
     milliseconds = milliseconds < 10 ? `0${milliseconds}` : milliseconds;
 
     return `${year}${month}${day}${hour}${minutes}${seconds}${milliseconds}wtd`;

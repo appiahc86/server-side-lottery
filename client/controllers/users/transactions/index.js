@@ -36,7 +36,7 @@ const userTransactions  = {
 
             //Validation
             if (amount < 1) return res.status(400).send("Minimum amount should be 1");
-            if (amount > 2000) return res.status(400).send("Maximum amount should be 2,000");
+            if (amount > 30000) return res.status(400).send("Maximum amount should be 30,000");
 
             const data = {
              amount: parseFloat(amount) * 100,
@@ -113,13 +113,15 @@ const userTransactions  = {
 
     },
 
+
+
     //Withdraw Money
     withdrawal: async (req, res) => {
         const { amount, network} = req.body;
         if (parseFloat(req.user.balance) < parseFloat(amount)) return res.status(400).send('Sorry! your balance is not sufficient');
 
         if (amount < 1) return res.status(400).send("Minimum amount should be 1");
-        if (amount > 2000) return res.status(400).send("Maximum amount should be 2,000");
+        if (amount > 30000) return res.status(400).send("Maximum amount should be 30,000");
 
         if (network !== req.user.network) return res.status(400).send(`Please select ${req.user.network} as network`);
 
@@ -181,7 +183,7 @@ const userTransactions  = {
 
 
                 //reference number for withdrawal
-                const withdrawalReference = generateReferenceNumber(new Date()) + req.user.id;
+                const withdrawalReference = generateReferenceNumber(moment()) + req.user.id;
 
                 const initiateTransferData = {
                     source: "balance",
