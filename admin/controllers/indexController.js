@@ -46,6 +46,25 @@ const indexController = {
                 await db('transactions').where('referenceNumber', data.data.reference)
                     .update({status: 'successful'})
 
+
+                if (data.data.metadata){
+
+                    //Set user's first deposit to true
+                    if (data.data.metadata.first_deposit.toString() === '0'){
+                        await db('users').where({id: data.data.metadata.user_id})
+                            .update({firstDeposit: true});
+                    }
+                    //Set first deposit promo to active
+                    const amount = parseFloat(data.data.amount) / 100;
+                    if (data.data.metadata.first_deposit.toString() === '0' && amount >= 5){
+                        await db('userPromos').where({promoId: 1, userId: response.data.data.metadata.user_id})
+                            .update({active: true})
+                    }
+
+                }
+
+
+
                 //failed response
             }else if (data.event === "transfer.failed" || data.event === "transfer.reversed"){
                 await db('transactions').where('referenceNumber', data.data.reference)
@@ -56,6 +75,7 @@ const indexController = {
             res.status(200).end();
 
         }catch (e) {
+            logger.error('admin, controllers indexController paystack');
             logger.error(e)
             res.status(400).end();
         }

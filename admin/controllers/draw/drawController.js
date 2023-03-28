@@ -25,10 +25,12 @@ const drawController = {
                 totalRecords: total[0].total
             });
         }catch (e) {
+            logger.error('admin, controllers drawController index');
             logger.error(e);
             return res.status(400).send("Sorry your request was not successful");
         }
     },
+
 
     //Save draw numbers
     create: async (req, res) => {
@@ -70,6 +72,7 @@ const drawController = {
 
         }catch (e) {
             if (e.code === 'ER_DUP_ENTRY') return res.status(400).send('You have already entered Draw numbers for this Date');
+            logger.error('admin, controllers drawController create');
             logger.error(e);
             return res.status(400).send("Sorry your request was not successful");
         }
@@ -112,6 +115,7 @@ const drawController = {
 
             return res.status(200).end();
         }catch (e) {
+            logger.error('admin, controllers drawController edit');
             logger.error(e);
             return res.status(400).send("Sorry your request was not successful");
         }
@@ -125,6 +129,7 @@ const drawController = {
             await db('machineNumbers').where('id', req.body.id).del();
             return res.status(200).end();
         }catch (e) {
+            logger.error('admin, controllers drawController destroy');
             logger.error(e);
             return res.status(400).send("Sorry your request was not successful");
         }
@@ -140,32 +145,32 @@ const drawController = {
 
             await db.transaction(async trx => {
 
-            //query draw numbers
-            const queryDrawNumbers = await trx('machineNumbers').where({id}).limit(1);
+                //query draw numbers
+                const queryDrawNumbers = await trx('machineNumbers').where({id}).limit(1);
 
-            //if draw numbers not found
-            if (!queryDrawNumbers.length) return res.status(400).send("Sorry selected draw was not found");
-            //if draw closed
-            if (queryDrawNumbers[0].closed) return res.status(400).send("Sorry draw is closed already");
+                //if draw numbers not found
+                if (!queryDrawNumbers.length) return res.status(400).send("Sorry selected draw was not found");
+                //if draw closed
+                if (queryDrawNumbers[0].closed) return res.status(400).send("Sorry draw is closed already");
 
-            let drawNumbers = JSON.parse(queryDrawNumbers[0].numbers);
+                let drawNumbers = JSON.parse(queryDrawNumbers[0].numbers);
 
-            //query draw tickets
-            const tickets = await trx('tickets')
-                .where({ticketDate: queryDrawNumbers[0].drawDate})
-                .select('id as ticketId', 'userId',
-                    'numbers', 'amount', 'payable','ticketDate');
+                //query draw tickets
+                const tickets = await trx('tickets')
+                    .where({ticketDate: queryDrawNumbers[0].drawDate})
+                    .select('id as ticketId', 'userId',
+                        'numbers', 'amount', 'payable','ticketDate');
 
-            //If no tickets were found
-            if (!tickets.length){
-                await trx('machineNumbers').where({id}).update({closed: true});
-                return res.status(200).end();
-            }
+                //If no tickets were found
+                if (!tickets.length){
+                    await trx('machineNumbers').where({id}).update({closed: true});
+                    return res.status(200).end();
+                }
 
-            //map and convert ticket numbers to javascript array
-            tickets.map(ticket => {
-                return ticket.numbers = JSON.parse(ticket.numbers);
-            })
+                //map and convert ticket numbers to javascript array
+                tickets.map(ticket => {
+                    return ticket.numbers = JSON.parse(ticket.numbers);
+                })
 
                 //declare winning numbers array
                 const winners = [];
@@ -175,7 +180,7 @@ const drawController = {
                     //Find Matching numbers
                     let numbersInDrawNumber = ticket.numbers.filter(number => drawNumbers.includes(number));
 
-                         //If 2 or more numbers found
+                    //If 2 or more numbers found
                     if (numbersInDrawNumber.length > 1){
                         ticket.amountWon = calculateWinnings(numbersInDrawNumber.length, ticket.amount);
                         ticket.createdAt =  moment().format("YYYY-MM-DD HH:mm:ss");
@@ -197,6 +202,7 @@ const drawController = {
                 //batch insert into winnings table
                 await trx.batchInsert('winners', winners, 30);
 
+
                 //Update all ticket status to closed
                 await trx('tickets').whereIn('id', ids)
                     .update({ticketStatus: 'closed'});
@@ -205,16 +211,15 @@ const drawController = {
                 await trx('machineNumbers').where({id}).update({closed: true});
 
 
-            return res.status(200).end();
+                return res.status(200).end();
 
             })
         }catch (e) {
+            logger.error('admin, controllers drawController performDraw');
             logger.error(e);
             return res.status(400).send("Sorry your request was not successful");
         }
     }
-
-
 
 }
 

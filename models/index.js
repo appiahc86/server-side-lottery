@@ -7,10 +7,13 @@ const Transaction = require("./Transaction");
 const Settings = require("./Settings");
 const AdminUser = require("./AdminUser");
 const TransactionLogs = require("./TransactionLogs");
+const Promotion = require("./Promotion");
+const UserPromo = require("./UserPromo");
 
 
 const migrations =  [
-    User, Ticket, MachineNumber, Transaction, Image, Winners, Settings, AdminUser, TransactionLogs
+    User, Ticket, MachineNumber, Transaction, Image, Winners, Settings, AdminUser,
+    TransactionLogs, Promotion, UserPromo
 ]
 
   const runMigrations = async () => {

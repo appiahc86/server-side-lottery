@@ -19,10 +19,10 @@ const userIndexController = {
                 .where('tickets.userId', req.user.id)
                 .orderBy('tickets.id', 'desc').limit(20);
 
-
             res.status(200).send({data});
 
         }catch (e) {
+            logger.error('client, user index viewTickets');
             logger.error(e);
             return res.status(400).send("Sorry your request was not successful");
         }

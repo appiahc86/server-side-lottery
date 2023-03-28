@@ -8,7 +8,8 @@ const db = require('knex')({
         user : config.DB_USER,
         password : config.DB_PASS,
         database : config.DB_NAME
-    }
+    },
+    pool: { min: 5, max: 30 }
 });
 
 module.exports = db;

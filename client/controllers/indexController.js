@@ -5,6 +5,7 @@ const moment = require("moment");
 
 
 const indexController = {
+    //get images
     getImages: async (req, res) => {
         try{
             let images = [];
@@ -23,10 +24,11 @@ const indexController = {
 
             res.status(200).send({images, date: moment()});
         }catch (e) {
+            logger.error('client, index controller getImages');
             logger.error(e);
             return res.status(204).end();
         }
-    },
+    }, // ./getImages
 
     //get game results
     getGameResults: async (req, res) => {
@@ -37,11 +39,37 @@ const indexController = {
             res.status(200).send({gameResults: query, date: moment()});
 
         }catch (e) {
+            logger.error('client, index controller getGameResults');
             logger.error(e);
             return res.status(400).send('Sorry, Could not get game results');
         }
-    }
+    }, //./getGameResults
+
+
+    //Get user promos
+    getUserPromos: async (req, res) => {
+        try {
+            const promos = await db('userPromos')
+                .where({userId: req.user.id, promoId: 1})
+                .limit(1);
+
+
+            if (promos.length && promos[0].active && promos[0].amount > 0){
+                return res.status(200).send(promos[0]);
+            }
+
+            return res.status(204).end();
+
+        }catch (e) {
+            logger.error('client, index controller getUserPromos');
+            logger.error(e);
+            return res.status(204).end();
+        }
+    } //./getUserPromos
+
+
 }
+
 
 
 module.exports = indexController;

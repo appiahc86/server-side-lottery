@@ -7,6 +7,7 @@ const lotteryController = {
     stake: async (req, res) => {
 
         try {
+
                                //.............Game status..............
 
             let today = moment();
@@ -27,6 +28,7 @@ const lotteryController = {
 
             const settings = await db('settings').where('id', 1).limit(1);
 
+            //If game is closed by admin
             if (!settings[0].gameStatus) return res.status(400).send("Sorry, game is closed by admin");
 
 
@@ -43,13 +45,31 @@ const lotteryController = {
             }
 
 
-            const payable = stakeFunction(req.body.selectedNumbers.length, req.body.amountToStake );
+            //calculate payable
+            const payable = stakeFunction(req.body.selectedNumbers.length, req.body.amountToStake);
 
-            if (parseFloat(req.user.balance) < parseFloat(payable)) return res.status(400).send("Your balance is not sufficient");
+            //if payable is less than 1
             if (payable < 1) return res.status(400).send("Minimum amount should be 1");
 
 
+          //Check if user has promo
+            let bonus = 0;
+            if (req.body.promo){
+                let query = await db('userPromos').where({id: req.body.promo}).select('amount').limit(1);
+                bonus = query[0] ? parseFloat(query[0].amount) : 0;
+            }
+
+
+            //user's balance
+            const balance = parseFloat(req.user.balance);
+
+            //If bonus plus balance is less than payable
+            if ((balance + bonus) < payable) return res.status(400).send("Your balance is not sufficient");
+
+
+
             let ticketId = null;
+            let bonusLeft = 0; //bonus left after deduction. will be sent as response payload
 
             await db.transaction(async trx => {
                 //Insert into tickets table
@@ -64,25 +84,51 @@ const lotteryController = {
 
                 ticketId = newTicket[0];
 
-                //Deduct Amount from user's account balance
-                await trx("users").where("id", req.user.id)
-                    .decrement("balance", parseFloat(payable))
+
+
+                if (bonus >= payable){ // If bonus is greater than or equal to payable
+
+                    // Pay with bonus
+                    await trx('userPromos').where('id', req.body.promo)
+                        .decrement('amount', payable)
+                    bonusLeft = bonus - payable;
+
+                }else if (bonus > 0 && bonus < payable){ //if bonus > 0 and less than payable
+
+                    //Pay with bonus and user's balance
+                    await trx('userPromos').where('id', req.body.promo)
+                        .update({amount: 0})
+                    const amountToDeduct = payable - bonus;
+                    await trx('users').where('id', req.user.id)
+                        .decrement("balance", amountToDeduct)
+                    req.user.balance = parseFloat(req.user.balance) - amountToDeduct;
+
+                }else { //if No bonus
+
+                    //Pay witn user's account balance
+                    await trx("users").where("id", req.user.id)
+                        .decrement("balance", payable)
+                    req.user.balance = parseFloat(req.user.balance) - payable;
+
+                }
 
                 //insert into transaction logs table
-                await trx("transactionLogs").insert({
-                    userId: req.user.id,
-                    type: "stake",
-                    amount: payable,
-                    oldBalance: req.user.balance,
-                    newBalance: parseFloat( req.user.balance) - payable,
-                    date: moment().format("YYYY-MM-DD"),
-                    createdAt: moment().format("YYYY-MM-DD HH:mm:ss")
-                })
-            })
+                // await trx("transactionLogs").insert({
+                //     userId: req.user.id,
+                //     type: "stake",
+                //     amount: payable,
+                //     oldBalance: req.user.balance,
+                //     newBalance: parseFloat( req.user.balance) - payable,
+                //     date: moment().format("YYYY-MM-DD"),
+                //     createdAt: moment().format("YYYY-MM-DD HH:mm:ss")
+                // })
 
-            res.status(201).end();
+            }) // ./end of db transaction
 
-            // Send real time to admin users
+
+            res.status(201).send({bonusLeft, balance: req.user.balance});
+
+            // Send real time to client users
             if (currentHour < 19 ){
                 req.io.to('admin-users').emit('current-tickets', {
                     id: ticketId,
@@ -96,6 +142,7 @@ const lotteryController = {
 
 
         }catch (e) {
+            logger.error('client, lottery controller stake');
                 logger.error(e);
                 return res.status(400).send("Sorry your request was not successful");
         } // ./Catch block

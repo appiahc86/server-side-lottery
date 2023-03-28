@@ -14,7 +14,7 @@ const auth = async (req, res, next) => {
         const decoded = jwt.verify(token, config.JWT_SECRET);
         const user = await db("users")
             .where({id: decoded.id})
-            .select("id","phone",
+            .select("id","phone", "firstDeposit",
                 "balance", "network","specialCode", "recipientCode")
             .limit(1);
 

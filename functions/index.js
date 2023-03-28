@@ -3,7 +3,7 @@ const moment = require("moment");
 // calculates amount payable during stake
 const stakeFunction = (selectedNumbers, amount) => {
     const determiner = selectedNumbers - 1;
-    const permTotal = (selectedNumbers * determiner) * amount;
+    const permTotal = (selectedNumbers * determiner) * parseFloat(amount);
     return permTotal / 2;
 }
 

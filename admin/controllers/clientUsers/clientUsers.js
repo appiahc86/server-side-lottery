@@ -33,10 +33,12 @@ const clientUsersController  = {
             });
 
         }catch (e) {
+            logger.error('admin, controllers clientUsers index');
             logger.error(e);
             return res.status(400).send("Sorry your request was not successful");
         }
     },
+
 
     //Search for user
     search: async (req, res) => {
@@ -51,6 +53,7 @@ const clientUsersController  = {
             return res.status(400).send('Sorry, this user was not found');
 
         }catch (e) {
+            logger.error('admin, controllers clientUsers search');
             logger.error(e);
             return res.status(400).send("Sorry your request was not successful");
         }

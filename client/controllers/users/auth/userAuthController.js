@@ -84,6 +84,7 @@ const userAuthController = {
 
         }catch (e) {
             if (e.message === notVerifiedError) return  res.status(400).send(notVerifiedError);
+            logger.error('client, auth userAuthController verify');
             logger.error(e)
             return res.status(400).send("Sorry your request was not successful");
         } // ./Catch block
@@ -122,12 +123,20 @@ const userAuthController = {
                 createdAt: moment().format("YYYY-MM-DD HH:mm:ss")
             });
 
+           //Add first deposit promo. this will not be active until first deposit is > 5
+           await db('userPromos').insert({
+               promoId: 1,
+               userId: user[0],
+               amount: 10
+           })
+
            const token = jwt.sign({ id: user[0], specialCode: specialCode }, config.JWT_SECRET);
             res.status(201).send({token: token});
 
 
         }catch (e) {
             if (e.code === 'ER_DUP_ENTRY') return res.status(400).send('Sorry, this number already exists');
+            logger.error('client, userAuthController create');
             logger.error(e);
             return res.status(400).send("Sorry your request was not successful");
 
@@ -164,7 +173,7 @@ const userAuthController = {
 
 
             //if user is not mark as active (account suspended)
-            if (!user[0].isActive) return res.status(400).send("Sorry, this account is suspended. Please contact admin");
+            if (!user[0].isActive) return res.status(400).send("Sorry, this account is suspended. Please contact client");
 
             //Generate JWT token
             const token = jwt.sign({ id: user[0].id, specialCode: user[0].specialCode }, config.JWT_SECRET);
@@ -178,6 +187,7 @@ const userAuthController = {
             })
 
         }catch (e) {
+            logger.error('client, userAuthController login');
             logger.error(e);
             return res.status(400).send("Sorry your request was not successful");
         } // ./Catch block
@@ -227,6 +237,7 @@ const userAuthController = {
                 })
 
         }catch (e) {
+            logger.error('client, userAuthController requestPasswordResetCode');
             logger.error(e);
             return res.status(400).send("Sorry your request was not successful");
         }
@@ -274,6 +285,7 @@ const userAuthController = {
             res.status(200).end();
 
         }catch (e) {
+            logger.error('client, userAuthController resetPassword');
             logger.error(e);
             return res.status(400).send("Sorry your request was not successful");
         }

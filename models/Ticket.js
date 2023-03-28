@@ -6,7 +6,7 @@ const Ticket = async () => {
         await db.schema.createTable('tickets', table => {
             table.bigIncrements('id').primary();
             table.bigInteger('userId').unsigned().notNullable().index();
-            table.json('numbers').notNullable();
+            table.json('numbers').index().notNullable();
             table.enum('ticketStatus', ['open', 'closed']).defaultTo('open');
             table.float('amount').notNullable();
             table.float('payable').notNullable();

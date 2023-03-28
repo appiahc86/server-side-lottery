@@ -8,7 +8,7 @@ const auth = require("../../middleware/auth");
 router.get("/", auth, uploadController.index);
 
 //upload images
-router.post("/", uploadController.create);
+router.post("/", auth, uploadController.create);
 
 //arrange images
 router.post('/arrange', auth, uploadController.arrange);

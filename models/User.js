@@ -12,6 +12,7 @@ const User = async () => {
             table.string('passwordResetCode', 10);
             table.mediumint('specialCode').notNullable(); //will use in JWT compare
             table.string('recipientCode').nullable();
+            table.boolean('firstDeposit').defaultTo(false);
             table.boolean('isActive').defaultTo(true);
             table.timestamp('createdAt').defaultTo(db.fn.now());
             table.engine('InnoDB');

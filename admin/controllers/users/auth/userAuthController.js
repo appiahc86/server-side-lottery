@@ -81,7 +81,7 @@ const userAuthController = {
 
 
             //if user is not mark as active (account suspended)
-            if (!user[0].isActive) return res.status(400).send("Sorry, this account is suspended. Please contact admin");
+            if (!user[0].isActive) return res.status(400).send("Sorry, this account is suspended. Please contact client");
 
             //Generate JWT token
             const token = jwt.sign({ id: user[0].id, specialCode: user[0].specialCode }, config.JWT_SECRET);

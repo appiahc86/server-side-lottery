@@ -2,7 +2,7 @@ const cron = require('cron');
 const db = require("./config/db");
 const config = require("./config/config");
 const axios = require("axios");
-
+const logger = require('./winston');
 
 const transactionJob = new cron.CronJob('*/3 * * * *', async () => { // This function will be executed every 3 minutes
     try {
@@ -28,7 +28,26 @@ const transactionJob = new cron.CronJob('*/3 * * * *', async () => { // This fun
 
                 //if successful transaction
                 if (response.data.status === true && response.data.data.status === 'success'){
-                    await db('transactions').where('id', pend.id).update({status: 'successful'})
+                    await db('transactions').where('id', pend.id).update({status: 'successful'});
+
+                    const amount = parseFloat(response.data.data.amount) / 100;
+
+                    if (response.data.data.metadata){
+
+                        //Set user's first deposit to true
+                        if (response.data.data.metadata.first_deposit.toString() === '0'){
+                            await db('users').where({id: response.data.data.metadata.user_id})
+                                .update({firstDeposit: true});
+                        }
+                        //Set first deposit promo to active
+                        if (response.data.data.metadata.first_deposit.toString() === '0' && amount >= 5){
+                            await db('userPromos').where({promoId: 1, userId: response.data.data.metadata.user_id})
+                                .update({active: true})
+                        }
+
+                    }
+
+
                 }
                 //if transaction fails
                 else if(response.data.status === true && response.data.data.status === 'failed' ){
@@ -40,7 +59,8 @@ const transactionJob = new cron.CronJob('*/3 * * * *', async () => { // This fun
         } //.If pending transactions found
 
     }catch (e) {
-        console.log(e.response)
+        logger.info('cron job')
+        logger.info(e);
     }
 
 });

@@ -12,18 +12,18 @@ const logger = require("./winston");
 const transactionJob = require("./cron");
 
 
+app.use(express.json());
+app.use(cors());
+
 
 // express-fileupload middleware
 app.use(
     uploader({
         useTempFiles: true,
-        tempFileDir : '/tmp/'
+        limits: { fileSize: 10000000 }
     })
 );
 
-
-app.use(express.json());
-app.use(cors());
 
 //Run cron jobs
 transactionJob.start();
@@ -56,7 +56,7 @@ const io = socketio(server, {
 //Socket.io Connection
 io.on('connection', (socket) => {
 
-    //Send number of users online to admin users
+    //Send number of users online to client users
     io.to("admin-users").emit('onlineUsers', socket.adapter.sids.size)
 
     socket.on("join-admin-users", (args) => {
@@ -66,7 +66,7 @@ io.on('connection', (socket) => {
 
     //disconnect
     socket.on('disconnect', () => {
-        io.emit('onlineUsers', socket.adapter.sids.size);
+        io.to("admin-users").emit('onlineUsers', socket.adapter.sids.size);
     })
 
 })

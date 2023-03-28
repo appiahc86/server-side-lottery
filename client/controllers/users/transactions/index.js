@@ -18,10 +18,13 @@ const userTransactions  = {
                 .orderBy('id', 'DESC').limit(20);
             res.status(200).send(data);
         }catch (e) {
+            logger.error('client, transactions controller index');
             logger.error(e);
             return res.status(400).send("Sorry your request was not successful");
         }
     },
+
+
 
     //Deposit Money into account
     deposit: async (req, res) => {
@@ -29,7 +32,7 @@ const userTransactions  = {
 
         try {
 
-            //Check if Deposits are disabled by admin
+            //Check if Deposits are disabled by client
             const settings = await db('settings').where('id', 1);
             if (!!settings[0].deposits === false) return res.status(400).send(`Sorry Deposits have been disabled by admin`);
 
@@ -46,7 +49,12 @@ const userTransactions  = {
                 phone : "0551234987",
                 // phone : "0"+req.user.phone, //TODO enable this in production
                 provider : convertNetwork(network)
-            }
+            },
+                metadata: {
+                 user_id: req.user.id,
+                 first_deposit: req.user.firstDeposit
+                }
+
             }
 
             await db.transaction(async trx => {
@@ -104,6 +112,7 @@ const userTransactions  = {
 
 
         }catch (e) {
+            logger.error('client, transactions controller deposit');
             logger.error(e.message);
             if (e.response){
                 return res.status(400).send(e.response.data.message);
@@ -127,7 +136,7 @@ const userTransactions  = {
 
         try {
 
-            //Check if withdrawals are disabled by admin
+            //Check if withdrawals are disabled by client
             const settings = await db('settings').where('id', 1);
             if (!!settings[0].withdrawals === false) return res.status(400).send(`Sorry withdrawals have been disabled by admin`);
 
@@ -177,7 +186,7 @@ const userTransactions  = {
                         await db('users').where('id', req.user.id)
                             .update({recipientCode: response.data.data.recipient_code})
                         req.user.recipientCode = response.data.data.recipient_code;
-                    }else return res.status(400).send(" Failed to create transfer recipient. Please contact admin")
+                    }else return res.status(400).send(" Failed to create transfer recipient. Please contact client")
                 }//.create recipient code/
 
 
@@ -223,23 +232,24 @@ const userTransactions  = {
                             createdAt: moment().format("YYYY-MM-DD HH:mm:ss")
                         })
 
-                        //insert into transaction logs table
-                        await trx("transactionLogs").insert({
-                            userId: req.user.id,
-                            type: "withdrawal",
-                            amount: parseFloat(amount),
-                            oldBalance: req.user.balance,
-                            newBalance: parseFloat( req.user.balance) - parseFloat(amount),
-                            date: moment().format("YYYY-MM-DD"),
-                            createdAt: moment().format("YYYY-MM-DD HH:mm:ss")
-                        })
-
 
                 })// ./transaction
+
+                    //insert into transaction logs table
+                    await db("transactionLogs").insert({
+                        userId: req.user.id,
+                        type: "withdrawal",
+                        amount: parseFloat(amount),
+                        oldBalance: req.user.balance,
+                        newBalance: parseFloat( req.user.balance) - parseFloat(amount),
+                        date: moment().format("YYYY-MM-DD"),
+                        createdAt: moment().format("YYYY-MM-DD HH:mm:ss")
+                    })
+
                     return res.status(200).send({balance: (parseFloat(req.user.balance) - parseFloat(amount))});
                 }else {
                     logger.info(response.data)
-                    return res.status(400).send("Sorry, withdrawal request was not successful. Please contact admin ")
+                    return res.status(400).send("Sorry, withdrawal request was not successful. Please contact client ")
                 }
 
 
@@ -247,6 +257,7 @@ const userTransactions  = {
             if (e.response){
                 return res.status(400).send(e.response.data.message);
             }
+            logger.error('client, transactions controller withdrawal');
             logger.error(e)
             return res.status(400).send("Sorry your request was not successful");
         }
@@ -272,6 +283,7 @@ const userTransactions  = {
 
 
         }catch (e) {
+            logger.error('client, transactions controller submit otp');
             logger.error(e.message);
             res.end();
         }
@@ -292,15 +304,31 @@ const userTransactions  = {
                 }
                 )
 
+            let amount = 0;
+
             if (response.data.data.status === "success"){
                 await db("transactions").where('referenceNumber', reference)
                     .update({status: 'successful'})
+
+                amount = parseFloat(response.data.data.amount) / 100;
+
+                //Set user's first deposit to true
+                if (response.data.data.metadata.first_deposit.toString() === '0'){
+                    await db('users').where({id: response.data.data.metadata.user_id})
+                        .update({firstDeposit: true});
+                }
+                //Set first deposit promo to active
+                if (response.data.data.metadata.first_deposit.toString() === '0' && amount >= 5){
+                    await db('userPromos').where({promoId: 1, userId: response.data.data.metadata.user_id})
+                        .update({active: true})
+                }
+
             }
 
-            const user = await db('users').where('id', req.user.id);
-            return res.status(200).send({balance: user[0].balance});
+            return res.status(200).send({balance: req.user.balance + amount});
 
         }catch (e) {
+            logger.error('client, transactions controller verify payment');
             logger.error(e.message);
              res.end();
         }

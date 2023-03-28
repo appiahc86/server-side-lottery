@@ -2,7 +2,7 @@
 <project version="4">
   <component name="DBNavigator.Project.DataEditorManager">
     <record-view-column-sorting-type value="BY_INDEX" />
-    <value-preview-text-wrapping value="true" />
+    <value-preview-text-wrapping value="false" />
     <value-preview-pinned value="false" />
   </component>
   <component name="DBNavigator.Project.DatabaseBrowserManager">
@@ -13,10 +13,20 @@
   </component>
   <component name="DBNavigator.Project.DatabaseConsoleManager">
     <connection id="97da9135-3002-40d0-b135-0e8ec64e9fc5">
-      <console name="Connection" type="STANDARD" schema="mysql" session="Main" />
-      <console name="Connection 1" type="STANDARD" schema="mysql" session="Main" />
-      <console name="Connection 1" type="STANDARD" schema="mysql" session="Main" />
-      <console name="Connection 1" type="STANDARD" schema="mysql" session="Main" />
+      <console name="Connection" type="STANDARD" schema="nanty" session="Main"><![CDATA[select
+    t.amount,
+    t.`createdAt`,
+    t.id,
+    t.network,
+    t.`referenceNumber`,
+    t.status,
+    t.`transactionDate`,
+    t.`transactionType`,
+    t.`userId`
+from
+    transactions t;
+
+select * from users]]></console>
       <console name="Connection 1" type="STANDARD" schema="mysql" session="Main" />
     </connection>
   </component>
@@ -28,10 +38,14 @@
   </component>
   <component name="DBNavigator.Project.DatasetFilterManager">
     <filter-actions connection-id="97da9135-3002-40d0-b135-0e8ec64e9fc5" dataset="nanty.images" active-filter-id="" />
+    <filter-actions connection-id="97da9135-3002-40d0-b135-0e8ec64e9fc5" dataset="nanty.tickets" active-filter-id="" />
     <filter-actions connection-id="97da9135-3002-40d0-b135-0e8ec64e9fc5" dataset="nanty.adminUsers" active-filter-id="" />
     <filter-actions connection-id="97da9135-3002-40d0-b135-0e8ec64e9fc5" dataset="nanty.machineNumbers" active-filter-id="" />
     <filter-actions connection-id="97da9135-3002-40d0-b135-0e8ec64e9fc5" dataset="nanty.users" active-filter-id="" />
     <filter-actions connection-id="97da9135-3002-40d0-b135-0e8ec64e9fc5" dataset="nanty.settings" active-filter-id="" />
+  </component>
+  <component name="DBNavigator.Project.ExecutionManager">
+    <retain-sticky-names value="false" />
   </component>
   <component name="DBNavigator.Project.ObjectQuickFilterManager">
     <last-used-operator value="EQUAL" />
@@ -518,5 +532,8 @@
         </visibility-settings>
       </environment>
     </general-settings>
+  </component>
+  <component name="DBNavigator.Project.StatementExecutionManager">
+    <execution-variables />
   </component>
 </project>

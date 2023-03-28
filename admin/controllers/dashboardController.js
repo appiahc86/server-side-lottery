@@ -1,12 +1,14 @@
 const db = require("../../config/db");
 const logger = require("../../winston");
+const moment = require("moment");
 
 const dashboardController = {
     index: async (req, res) => {
         try{
 
-            const startOfYear = `${new Date().getFullYear()}-01-01`;
-            const today = `${new Date().getFullYear()}-${new Date().getMonth()+1}-${new Date().getDate()}`;
+            const startOfYear = `${moment().year()}-01-01`;
+            const today = moment().format("YYYY-MM-DD");
+            console.log(today)
 
             //get users count
             const usersCount = await db.raw(`SELECT COUNT(*) as 'count' FROM users;`);
@@ -44,6 +46,7 @@ const dashboardController = {
                 annualWinnings: annualWinningsQuery.length ? annualWinningsQuery[0].total : 0
             })
         }catch (e) {
+            logger.error('admin, controllers dashboardController index');
             logger.error(e);
             return res.status(400).send("Sorry your request was not successful");
         }

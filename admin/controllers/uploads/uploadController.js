@@ -4,6 +4,7 @@ const path = require('path');
 const uploadDir = path.join(__dirname, '../../../public/images/');
 const logger = require("../../../winston");
 
+
 const uploadController = {
     //Get all images
     index: async (req, res) => {
@@ -25,6 +26,7 @@ const uploadController = {
     //Upload images
     create: async (req, res) => {
 
+
         try {
 
             const query = await db('images').limit(1);
@@ -32,15 +34,14 @@ const uploadController = {
             const listsSize =  lists.length;
 
 
-            let files = [req.files];
-            // return console.log(files[0]['images[]'])
-            // files = files[0]["images[]"];
-            files = files[0]['images[]'];
-            // const images = [];
-            // return console.log(files[0]["images"])
+             const files = Object.values(req.files)
+             // let files = [req.files];
+             // files = files[0]['images[]'];
 
-            if (Array.isArray(files)) { //If multiple images
-                if ((listsSize + files.length) > 10) return res.status(400).send(`Sorry, images limit is 10 and ${listsSize} is already taken`);
+
+            // if (Array.isArray(files)) { //If multiple images
+                if ((listsSize + files.length) > 10)
+                    return res.status(400).send(`Sorry, images limit is 10 and ${listsSize} is already taken`);
                 for (const file of files) {
                     const imgName = Date.now() + '-' + file.name;
 
@@ -50,20 +51,22 @@ const uploadController = {
                     // images.push({name: imgName, createdAt: new Date()});
                     lists.unshift({name: imgName});
                 }
-            }else { //If single image
-                if (listsSize > 9) return res.status(400).send("Sorry images are already full. Please delete some to continue");
-                const imgName = Date.now() + '-' + files.name;
-                files.mv(uploadDir + imgName, (err) => {
-                    if (err) return res.status(400).send("Sorry, upload was not successful");
-                });
-
-                lists.unshift({name: imgName});
-            }
+            // }
+            // else { //If single image
+            //     if (listsSize > 9) return res.status(400).send("Sorry images are already full. Please delete some to continue");
+            //     const imgName = Date.now() + '-' + files.name;
+            //     files.mv(uploadDir + imgName, (err) => {
+            //         if (err) return res.status(400).send("Sorry, upload was not successful");
+            //     });
+            //
+            //     lists.unshift({name: imgName});
+            // }
 
             const updated = lists.map((item, index) => {
                 item.id = index;
                 return item;
             });
+
 
             //Update record in db
              await db('images').where('id', 1)
