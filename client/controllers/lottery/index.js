@@ -138,6 +138,15 @@ const lotteryController = {
                     payable,
                     createdAt: moment()
                 })
+            }else{
+                   req.io.to('admin-users').emit('tomorrow-tickets', {
+                    id: ticketId,
+                    user: req.user.phone,
+                    numbers: JSON.stringify(req.body.selectedNumbers),
+                    amount: req.body.amountToStake,
+                    payable,
+                    createdAt: moment()
+                })
             }
 
 
