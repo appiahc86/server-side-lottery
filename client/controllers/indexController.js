@@ -55,10 +55,10 @@ const indexController = {
 
 
             if (promos.length && promos[0].active && promos[0].amount > 0){
-                return res.status(200).send(promos[0]);
+                return res.status(200).send({promos: promos[0], balance: req.user.balance});
             }
 
-            return res.status(204).end();
+            return res.status(200).send({promos: null, balance: req.user.balance});
 
         }catch (e) {
             logger.error('client, index controller getUserPromos');

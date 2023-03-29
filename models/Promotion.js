@@ -14,8 +14,6 @@ const Promotion = async () => {
             table.engine('InnoDB');
         });
 
-    }
-
 
     await db('promotions').insert({
         name: 'First Deposit',
@@ -23,6 +21,11 @@ const Promotion = async () => {
         startDate: moment().format("YYYY-MM-DD"),
         endDate: moment().add(10, 'years').format("YYYY-MM-DD"),
     })
+    
+    } 
+
+
+  
 
 }
 

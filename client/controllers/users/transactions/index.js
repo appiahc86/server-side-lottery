@@ -57,7 +57,7 @@ const userTransactions  = {
 
             }
 
-            await db.transaction(async trx => {
+            // await db.transaction(async trx => {
 
 
             const response = await    axios.post("https://api.paystack.co/charge",
@@ -73,7 +73,7 @@ const userTransactions  = {
             // if (response.data.data.status === "pay_offline" || response.data.data.status === "send_otp") {
             if (response.data.status === true) {
 
-                await trx('transactions').insert({
+                await db('transactions').insert({
                     userId: req.user.id,
                     referenceNumber: response.data.data.reference,
                     transactionType: 'deposit',
@@ -84,17 +84,7 @@ const userTransactions  = {
                     createdAt: moment().format("YYYY-MM-DD HH:mm:ss")
                 })
 
-                //insert into transaction logs table
-                await trx("transactionLogs").insert({
-                    userId: req.user.id,
-                    type: "deposit",
-                    amount: parseFloat(amount),
-                    oldBalance: req.user.balance,
-                    newBalance: parseFloat( req.user.balance) + parseFloat(amount),
-                    date: moment().format("YYYY-MM-DD"),
-                    createdAt: moment().format("YYYY-MM-DD HH:mm:ss")
-                })
-
+          
                 return res.status(200).send({
                     reference: response.data.data.reference,
                     network: network,
@@ -108,7 +98,7 @@ const userTransactions  = {
                 return res.status(400).send("Sorry deposit request was refused");
             }
 
-            })
+            // })
 
 
         }catch (e) {
@@ -268,7 +258,7 @@ const userTransactions  = {
     submitOtp: async (req, res) => {
         const { otp, reference } = req.body;
         return res.end();
-
+ 
         try {
 
             const response = await axios.post("https://api.paystack.co/charge/submit_otp",
@@ -280,6 +270,7 @@ const userTransactions  = {
                     }
                 }
             )
+            // res.status(200).end();
 
 
         }catch (e) {
@@ -325,7 +316,8 @@ const userTransactions  = {
 
             }
 
-            return res.status(200).send({balance: req.user.balance + amount});
+
+            return res.status(200).send({amount});
 
         }catch (e) {
             logger.error('client, transactions controller verify payment');

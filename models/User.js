@@ -7,7 +7,7 @@ const User = async () => {
             table.bigIncrements('id').primary();
             table.string('phone', 15).unique();
             table.enum('network', ['mtn', 'vodafone', 'airtelTigo']).notNullable();
-            table.decimal('balance').defaultTo(0).unsigned();
+            table.decimal('balance').defaultTo(0);
             table.string('password').notNullable();
             table.string('passwordResetCode', 10);
             table.mediumint('specialCode').notNullable(); //will use in JWT compare
