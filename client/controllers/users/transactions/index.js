@@ -236,10 +236,16 @@ const userTransactions  = {
                         createdAt: moment().format("YYYY-MM-DD HH:mm:ss")
                     })
 
-                    return res.status(200).send({balance: (parseFloat(req.user.balance) - parseFloat(amount))});
+                    res.status(200).send({balance: (parseFloat(req.user.balance) - parseFloat(amount))});
+
+                    //Set first deposit bonus to 0
+                    await db('userPromos').where('promoId', 1)
+                        .andWhere('userId', req.user.id)
+                        .update({amount: 0});
+
                 }else {
                     logger.info(response.data)
-                    return res.status(400).send("Sorry, withdrawal request was not successful. Please contact client ")
+                    return res.status(400).send("Sorry, withdrawal request was not successful. Please try again later")
                 }
 
 

@@ -66,6 +66,10 @@ const lotteryController = {
             //If bonus plus balance is less than payable
             if ((balance + bonus) < payable) return res.status(400).send("Your balance is not sufficient");
 
+            //if user has bonus and stakes less than or equal to bonus
+            if (bonus && payable <= bonus){
+                return res.status(400).send("First stake must exceed your bonus");
+            }
 
 
             let ticketId = null;
