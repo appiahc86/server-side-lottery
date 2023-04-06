@@ -13,6 +13,8 @@ const indexController = {
 
             images =  JSON.parse(query[0][0].images) || [];
 
+            const gameStatus = await db('settings').select('gameStatus')
+                .where('id', 1)
 
             if (images.length){
                 images.map(image => {
@@ -22,7 +24,7 @@ const indexController = {
                 })
             }
 
-            res.status(200).send({images, date: moment()});
+            res.status(200).send({images, date: moment(), gameStatus: gameStatus[0].gameStatus});
         }catch (e) {
             logger.error('client, index controller getImages');
             logger.error(e);

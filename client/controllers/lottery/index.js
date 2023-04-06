@@ -29,7 +29,7 @@ const lotteryController = {
             const settings = await db('settings').where('id', 1).limit(1);
 
             //If game is closed by admin
-            if (!settings[0].gameStatus) return res.status(400).send("Sorry, game is closed by admin");
+            if (!settings[0].gameStatus) return res.status(400).send("Sorry, game closed");
 
 
                                         // ..........validation..............
