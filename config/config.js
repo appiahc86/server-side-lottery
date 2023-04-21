@@ -14,9 +14,9 @@ if (process.env.NODE_ENV !== 'production'){
 }else { //In production
     module.exports = {
     DB_HOST: "127.0.0.1",
-    DB_USER: "chribmng_wp423",
-    DB_PASS: "{zu&YwgmXT9G",
-    DB_NAME: "chribmng_nanty",
+    DB_USER: "nantwvtm_whynot",
+    DB_PASS: "@%x0MhpAB}s5",
+    DB_NAME: "nantwvtm_nanty",
     JWT_SECRET: "&#2022Dec",
     SMS_API_KEY: "b5526f29eea2877d0294ac6a447662865d07",
     SMS_SENDER: "Nanty",
