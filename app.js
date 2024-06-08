@@ -16,7 +16,7 @@ app.use(express.json());
 app.use(cors());
 
 
-// express-fileupload middleware
+// express-fileUpload middleware
 app.use(
     uploader({
         useTempFiles: true,
