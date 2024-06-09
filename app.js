@@ -92,6 +92,7 @@ app.use("/users", usersIndexRouter);
 app.use("/users/auth", userAuthRouter);
 app.use("/users/transactions", usersTransactionRouter);
 
+
 //Load Admin routes
 const adminUserAuthRouter = require("./admin/routes/users/auth/userAuthRoutes");
 const adminIndexRouter = require("./admin/routes/indexRouter")
@@ -136,3 +137,7 @@ if (process.env.NODE_ENV !== 'production'){
         logger.info(`server running on port ${port}`);
     })
 }else server.listen();
+
+
+
+

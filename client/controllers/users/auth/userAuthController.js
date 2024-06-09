@@ -6,6 +6,7 @@ const { generateRandomNumber, getBankCode } = require("../../../../functions");
 const axios = require("axios");
 const  logger = require("../../../../winston");
 const moment = require("moment");
+const CryptoJS = require("crypto-js");
 
 const notVerifiedError = 'Sorry, this is not a valid momo number or not registered on this network';
 
@@ -49,7 +50,11 @@ const userAuthController = {
                 throw new Error(notVerifiedError)
             })
 
-            if (process.env.NODE_ENV !== 'production') return res.status(200).send({message: 202020})
+            if (process.env.NODE_ENV !== 'production') {
+                // Encrypt Verification Code
+                const ciphertext = CryptoJS.AES.encrypt('202020', 'secretKey@').toString();
+                return res.status(200).send({message: ciphertext})
+            }
 
 
             //generate verification code
@@ -72,7 +77,11 @@ const userAuthController = {
             const url = `https://sms.textcus.com/api/send?apikey=${smsApiKey}&destination=${recipient}&source=${sender}&dlr=1&type=0&message=${sms}`;
 
             axios.get(url).then(response=>{
-                if(response.data.status.toString() === '0000') return res.status(200).send({message: verificationCode})
+                if(response.data.status.toString() === '0000') {
+                    // Encrypt Verification Code
+                    const ciphertext = CryptoJS.AES.encrypt(verificationCode, 'secretKey@').toString();
+                    return res.status(200).send({message: ciphertext})
+                }
                  return res.status(400).send("Failed to send verification code. Please contact Admin");
             })
 
