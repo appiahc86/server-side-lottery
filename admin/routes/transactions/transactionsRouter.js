@@ -7,14 +7,18 @@ const auth = require("../../middleware/auth");
 //Get Transactions
 router.get('/', auth,transactionsController.index);
 
+//Get Withdrawals
+router.get('/withdrawals', auth,transactionsController.withdrawals);
+
+//Approve Withdrawal
+router.post('/withdrawals/approve', auth,transactionsController.approveWithdrawal);
+
+//Decline Withdrawal
+router.post('/withdrawals/decline', auth,transactionsController.declineWithdrawal);
+
 //Search transaction
 router.post('/single', auth, transactionsController.search);
 
-//Mark As Successful
-router.post('/mark-as-successful', auth, transactionsController.markAsSuccessful)
-
-//Mark As Failed
-router.post('/mark-as-failed', auth, transactionsController.markAsFailed)
 
 
 module.exports = router;

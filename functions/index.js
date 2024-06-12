@@ -30,7 +30,7 @@ const getBankCode = (newtwork) => {
     switch (newtwork) {
         case 'airtelTigo': type = 'ATL'
         break;
-        case 'vodafone': type =  'VOD'
+        case 'telecel': type =  'VOD'
         break;
         default: type =  'MTN'
             break;
@@ -45,7 +45,7 @@ const convertNetwork = (newtwork) => {
     switch (newtwork) {
         case 'airtelTigo': type = 'tgo'
             break;
-        case 'vodafone': type =  'vod'
+        case 'telecel': type =  'vod'
             break;
         default: type =  'mtn'
             break;
@@ -71,12 +71,24 @@ const generateReferenceNumber = (date) => {
     let milliseconds = moment(date).milliseconds();
     milliseconds = milliseconds < 10 ? `0${milliseconds}` : milliseconds;
 
-    return `${year}${month}${day}${hour}${minutes}${seconds}${milliseconds}wtd`;
+    return `${year}${month}${day}${hour}${minutes}${seconds}${milliseconds}wtd-`;
 }
 
+const getKoraPaymobileMoneyCode = (network) => {
+    let type = "0004";
+    switch (newtwork) {
+        case 'airtelTigo': type = '0005'
+            break;
+        case 'telecel': type =  '0006'
+            break;
+        default: type =  '0004'
+            break;
+    }
 
+    return type;
+}
 
 module.exports = {
     stakeFunction, generateRandomNumber, calculateWinnings, getBankCode,
-    convertNetwork, generateReferenceNumber
+    convertNetwork, generateReferenceNumber, getKoraPaymobileMoneyCode
 }

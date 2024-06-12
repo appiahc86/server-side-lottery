@@ -8,7 +8,6 @@ const dashboardController = {
 
             const startOfYear = `${moment().year()}-01-01`;
             const today = moment().format("YYYY-MM-DD");
-            console.log(today)
 
             //get users count
             const usersCount = await db.raw(`SELECT COUNT(*) as 'count' FROM users;`);

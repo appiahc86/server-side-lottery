@@ -2,6 +2,7 @@ const db = require("../../../config/db");
 const logger = require("../../../winston");
 const axios = require("axios");
 const config = require("../../../config/config");
+const moment = require("moment/moment");
 
 const transactionsController = {
 
@@ -10,6 +11,7 @@ const transactionsController = {
         try {
             const page = req.query.page || 1;
             const pageSize = req.query.pageSize || 10;
+            // const today = moment().format("YYYY-MM-DD");
 
            const transactions = await db.select('users.phone', 'transactions.id',
                'transactions.transactionType', 'transactions.amount', 'transactions.status',
@@ -32,6 +34,42 @@ const transactionsController = {
 
 
         }catch (e) {
+            logger.error(e);
+            return res.status(400).send("Sorry your request was not successful");
+        }
+    },
+
+    //Get Withdrawals
+    withdrawals: async (req, res) => {
+        try {
+            const page = req.query.page || 1;
+            const pageSize = req.query.pageSize || 10;
+            // const today = moment().format("YYYY-MM-DD");
+
+            const withdrawals = await db.select('users.phone', 'users.name', 'users.network',
+                'transactions.id','transactions.amount', 'transactions.status',
+                'transactions.referenceNumber', 'transactions.createdAt',
+                db.raw('COUNT(*) OVER () as total'))
+                .from('transactions')
+                .leftJoin('users', 'users.id', 'transactions.userId')
+                .where('transactions.transactionType', 'withdrawal')
+                .andWhere('transactions.status', 'pending')
+                .offset((page - 1) * pageSize)
+                .limit(pageSize)
+                .orderBy('transactions.id', 'asc')
+
+            const total = withdrawals.length ? withdrawals[0].total : 0;
+
+            return res.status(200).send({
+                data: withdrawals,
+                page,
+                pageSize,
+                totalRecords: total
+            });
+
+
+        }catch (e) {
+            logger.error("admin/transactions/withdrawals");
             logger.error(e);
             return res.status(400).send("Sorry your request was not successful");
         }
@@ -77,33 +115,38 @@ const transactionsController = {
         }
     },
 
-
-    //Mark As Successful
-    markAsSuccessful: async (req, res) => {
+    //Approve Withdrawal
+    approveWithdrawal: async (req, res) => {
         const { id } = req.body;
         try {
+             if (!id) return res.status(400).send("Sorry, record not found");
+
             await db('transactions').where('id', id)
                 .update({status: 'successful'})
             res.status(200).end();
         }catch (e) {
+            logger.error("admin, transactions, approve withdrawal");
             logger.error(e);
             return res.status(400).send("Sorry your request was not successful");
         }
     },
 
-
-    //Mark As Failed
-    markAsFailed: async (req, res) => {
+    //Decline Withdrawal
+    declineWithdrawal: async (req, res) => {
         const { id } = req.body;
         try {
+            if (!id) return res.status(400).send("Sorry, record not found");
+
             await db('transactions').where('id', id)
                 .update({status: 'failed'})
             res.status(200).end();
         }catch (e) {
+            logger.error("admin, transactions, decline withdrawal");
             logger.error(e);
             return res.status(400).send("Sorry your request was not successful");
         }
     },
+
 
 }
 

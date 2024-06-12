@@ -2,7 +2,7 @@ const db = require("../../../../config/db");
 const bcrypt = require("bcryptjs");
 const config = require("../../../../config/config");
 const jwt = require("jsonwebtoken");
-const { generateRandomNumber, getBankCode } = require("../../../../functions");
+const { generateRandomNumber, getBankCode} = require("../../../../functions");
 const axios = require("axios");
 const  logger = require("../../../../winston");
 const moment = require("moment");
@@ -31,10 +31,15 @@ const userAuthController = {
 
             if (user.length) return res.status(400).send("Sorry, this number already exists")
 
+            //Name on Mobile money number
+            let accountName = "";
 
 
             //Verify Phone number
             let bankCode = getBankCode(network);
+            // let koraPaymobileMoneyCode = getKoraPaymobileMoneyCode(network)
+
+            //Paypal momo number verification
             await axios.get(
                 `https://api.paystack.co/bank/resolve`,
                 {
@@ -45,15 +50,39 @@ const userAuthController = {
                     headers: { 'Authorization': `Bearer ${config.PAYSTACK_SECRET_KEY}`}
                 }
             ).then(response => {
-                if (response.data.status !== true) return res.status(400).send(notVerifiedError)
+                if (response.data.status !== true) return res.status(400).send(notVerifiedError);
+                if(response.data.status === true){
+                    accountName = response?.data?.data?.account_name || ""; //Set account name
+                }
             }).catch(e => {
                 throw new Error(notVerifiedError)
             })
 
+            //Korapay momo number verification
+            // await axios.post(
+            //     `https://api.korapay.com/merchant/api/v1/misc/mobile-money/resolve`,
+            //     {
+            //         mobileMoneyCode: koraPaymobileMoneyCode,
+            //         phoneNumber: '0'+phoneNumber,
+            //         currency: "GHS"
+            //     },
+            //     {
+            //         headers: { 'Content-Type': 'application/json'}
+            //     }
+            // ).then(response => {
+            //     if (response.data.status !== true) return res.status(400).send(notVerifiedError);
+            //     if(response.data.status === true){
+            //         accountName = response?.data?.data?.account_name || ""; //Set account name
+            //     }
+            // }).catch(e => {
+            //     throw new Error(notVerifiedError)
+            // })
+
+
             if (process.env.NODE_ENV !== 'production') {
                 // Encrypt Verification Code
                 const ciphertext = CryptoJS.AES.encrypt('202020', 'secretKey@').toString();
-                return res.status(200).send({message: ciphertext})
+                return res.status(200).send({verificationCode: ciphertext, accountName})
             }
 
 
@@ -79,8 +108,8 @@ const userAuthController = {
             axios.get(url).then(response=>{
                 if(response.data.status.toString() === '0000') {
                     // Encrypt Verification Code
-                    const ciphertext = CryptoJS.AES.encrypt(verificationCode, 'secretKey@').toString();
-                    return res.status(200).send({message: ciphertext})
+                    const ciphertext = CryptoJS.AES.encrypt(`${verificationCode}`, 'secretKey@').toString();
+                    return res.status(200).send({verificationCode: ciphertext, accountName})
                 }
                  return res.status(400).send("Failed to send verification code. Please contact Admin");
             })
@@ -102,7 +131,7 @@ const userAuthController = {
 
     //..............Register a new user........................
     create: async (req, res) => {
-        const {phoneNumber, password, network } = req.body;
+        const {phoneNumber, accountName, password, network } = req.body;
 
         const regex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).{6,}$/;
 
@@ -126,6 +155,7 @@ const userAuthController = {
             //Save to db
            const user = await db("users").insert({
                 phone: phoneNumber,
+                name: accountName,
                 password: hash,
                 specialCode,
                 network,
@@ -190,7 +220,7 @@ const userAuthController = {
             res.status(200).send({
                 token,
                 user: {
-                  firstName: user[0].firstName, lastName: user[0].lastName, phone: user[0].phone,
+                  name: user[0].name, phone: user[0].phone,
                     network: user[0].network, balance: user[0].balance
                 }
             })
@@ -219,7 +249,7 @@ const userAuthController = {
             await db('users').where({phone: phoneNumber})
                 .update({passwordResetCode: code})
 
-            if (process.env.NODE_ENV !== 'production') return res.status(200).end()
+            if (process.env.NODE_ENV !== 'production') return res.status(200).end();
 
             //...........................Send sms to phone number.....................
             const smsApiKey = config.SMS_API_KEY;

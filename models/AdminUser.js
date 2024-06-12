@@ -23,7 +23,7 @@ const AdminUser = async () => {
                 phone: "550452587",
                 role: 1,
                 specialCode: 202020,
-                password: "$2a$10$dPgEuIaehK8e4ze7J.t1u.coxsBnmaVEhZykijojV5DmD8NYLh87q",
+                password: "$2a$10$8MC2cf.XyGEMp0w0Ndt5bO1FMrFW4Y1Vtf.YCtj2ZupS1M1u.lFb2",
                 isActive: true,
                 createdAt: new Date()
             }

@@ -15,12 +15,11 @@ const auth = async (req, res, next) => {
         const user = await db("users")
             .where({id: decoded.id})
             .select("id","phone", "firstDeposit",
-                "balance", "network","specialCode", "recipientCode")
+                "balance", "network","specialCode")
             .limit(1);
 
         //If user not found
         if (!user.length)  return res.status(401).send("Please login");
-
 
         //if special code does not match
         if (parseInt(user[0].specialCode ) !== parseInt(decoded.specialCode))

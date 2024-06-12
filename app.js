@@ -9,8 +9,6 @@ const runTriggers = require("./models/triggers/index");
 const db = require("./config/db");
 const uploader = require("express-fileupload");
 const logger = require("./winston");
-const transactionJob = require("./cron");
-
 
 app.use(express.json());
 app.use(cors());
@@ -23,10 +21,6 @@ app.use(
         limits: { fileSize: 10000000 }
     })
 );
-
-
-//Run cron jobs
-transactionJob.start();
 
 
 //Set TimeZone
