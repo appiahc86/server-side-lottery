@@ -1,8 +1,7 @@
 const db = require("../../../config/db");
 const logger = require("../../../winston");
-const axios = require("axios");
-const config = require("../../../config/config");
 const moment = require("moment/moment");
+const {generateReferenceNumber} = require("../../../functions");
 
 const transactionsController = {
 
@@ -34,6 +33,7 @@ const transactionsController = {
 
 
         }catch (e) {
+            logger.error("admin/transactions/index");
             logger.error(e);
             return res.status(400).send("Sorry your request was not successful");
         }
@@ -76,45 +76,6 @@ const transactionsController = {
     },
 
 
-    //search transaction
-    search: async (req, res) => {
-        const { reference } = req.body;
-        try {
-            const transaction = await db.select('users.phone', 'transactions.id',
-                'transactions.transactionType', 'transactions.amount', 'transactions.status',
-                'transactions.referenceNumber', 'transactions.network','transactions.createdAt')
-                .from('transactions')
-                .join('users', 'users.id', 'transactions.userId')
-                .where('transactions.referenceNumber', reference)
-                .limit(1);
-
-            if (!transaction.length) return res.status(400).send("Sorry, record not found");
-
-            let url = `https://api.paystack.co/transaction/verify/${transaction[0].referenceNumber}`;
-            if (transaction[0].transactionType === 'withdrawal'){
-                url = `https://api.paystack.co/transfer/verify/${transaction[0].referenceNumber}`;
-            }
-
-
-
-            const response = await axios.get(url,
-                {
-                    headers: {'Authorization': `Bearer ${config.PAYSTACK_SECRET_KEY}`}
-                }
-                )
-            if (response.status === 200){
-                return res.status(200).send({localTransaction: transaction[0], gatewayResponse: response.data.data });
-            }else return res.status(400).send('Sorry, Could not get response from gateway')
-
-
-        }catch (e) {
-            console.log(e)
-            if (e.response) return res.status(400).send(e.response.data.message);
-            logger.error(e);
-            return res.status(400).send("Sorry your request was not successful");
-        }
-    },
-
     //Approve Withdrawal
     approveWithdrawal: async (req, res) => {
         const { id } = req.body;
@@ -147,6 +108,76 @@ const transactionsController = {
         }
     },
 
+    //Deposit number lookup
+    lookup: async (req, res) => {
+        const { phoneNumber } = req.body;
+        try {
+            // validation
+            if (phoneNumber.toString().length  !== 9 )return res.status(400).send("Please check phone number");
+
+            const foundNumber = await db('users')
+                .select("id","phone", "name", "network", "balance")
+                .where("phone", phoneNumber)
+                .limit(1)
+
+            if (!foundNumber.length)return res.status(400).send("Sorry, this phone number was not found");
+
+            return res.status(200).send({data: foundNumber[0]});
+        }catch (e) {
+            logger.error("admin, transactions, deposit lookup");
+            logger.error(e);
+            return res.status(400).send("Sorry your request was not successful");
+        }
+    },
+
+    //Deposit
+    deposit: async (req, res) => {
+        const { userId, amount } = req.body;
+        try {
+            // validation
+            if (amount < 1 )return res.status(400).send("Amount cannot be less than 1");
+
+            //reference number for withdrawal
+            const referenceNumber = generateReferenceNumber(moment()) + userId;
+
+            //save to transactions table
+            await db('transactions').insert({
+                referenceNumber,
+                userId,
+                transactionType: 'deposit',
+                status: 'successful',
+                amount: parseFloat(amount),
+                transactionDate: moment().format("YYYY-MM-DD"),
+                createdAt: moment().format("YYYY-MM-DD HH:mm:ss")
+            })
+
+            return res.status(200).end();
+        }catch (e) {
+            logger.error("admin, transactions, deposit");
+            logger.error(e);
+            return res.status(400).send("Sorry your request was not successful");
+        }
+    },
+
+    searchSingle: async (req, res) => {
+        const { referenceNumber } = req.body;
+        try {
+
+            const query = await db.select('users.phone', 'users.name', 'users.network',
+                'transactions.id','transactions.amount', 'transactions.status',
+                'transactions.referenceNumber', 'transactions.transactionType', 'transactions.createdAt',)
+                .from('transactions')
+                .join('users', 'users.id', 'transactions.userId')
+                .where('transactions.referenceNumber', referenceNumber)
+                .limit(1);
+
+            return res.status(200).send({data: query[0]});
+        }catch (e) {
+            logger.error("admin, transactions, search single");
+            logger.error(e);
+            return res.status(400).send("Sorry your request was not successful");
+        }
+    }
 
 }
 

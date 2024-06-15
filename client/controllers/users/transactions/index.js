@@ -64,7 +64,6 @@ const userTransactions  = {
                             userId: req.user.id,
                             transactionType: 'withdrawal',
                             amount: parseFloat(amount),
-                            // network,
                             transactionDate: moment().format("YYYY-MM-DD"),
                             createdAt: moment().format("YYYY-MM-DD HH:mm:ss")
                         })

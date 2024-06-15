@@ -7,9 +7,11 @@ const depositTrigger =  () => {
 CREATE TRIGGER IF NOT EXISTS deposit_trigger
 AFTER INSERT ON transactions FOR EACH ROW
 BEGIN
-      UPDATE users
-      SET balance = balance + NEW.amount
-      WHERE id = NEW.userId;    
+  IF NEW.status = 'successful' THEN
+    UPDATE users
+    SET balance = balance + NEW.amount
+    WHERE id = NEW.userId;   
+  END IF;
 END;
 `)
         .then(() => {

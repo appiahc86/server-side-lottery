@@ -16,8 +16,14 @@ router.post('/withdrawals/approve', auth,transactionsController.approveWithdrawa
 //Decline Withdrawal
 router.post('/withdrawals/decline', auth,transactionsController.declineWithdrawal);
 
-//Search transaction
-router.post('/single', auth, transactionsController.search);
+//Number Lookup
+router.post('/deposit/lookup', auth,transactionsController.lookup);
+
+//Deposit
+router.post('/deposit', auth, transactionsController.deposit);
+
+//Search by reference number
+router.post('/search-single', auth, transactionsController.searchSingle);
 
 
 
