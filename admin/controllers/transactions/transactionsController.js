@@ -2,6 +2,7 @@ const db = require("../../../config/db");
 const logger = require("../../../winston");
 const moment = require("moment/moment");
 const {generateReferenceNumber} = require("../../../functions");
+const {log} = require("winston");
 
 const transactionsController = {
 
@@ -116,7 +117,8 @@ const transactionsController = {
             if (phoneNumber.toString().length  !== 9 )return res.status(400).send("Please check phone number");
 
             const foundNumber = await db('users')
-                .select("id","phone", "name", "network", "balance")
+                .select("id","phone", "name", "network",
+                "firstDeposit","balance")
                 .where("phone", phoneNumber)
                 .limit(1)
 
@@ -132,7 +134,8 @@ const transactionsController = {
 
     //Deposit
     deposit: async (req, res) => {
-        const { userId, amount } = req.body;
+        const { userId, amount, firstDeposit } = req.body;
+
         try {
             // validation
             if (amount < 1 )return res.status(400).send("Amount cannot be less than 1");
@@ -151,7 +154,23 @@ const transactionsController = {
                 createdAt: moment().format("YYYY-MM-DD HH:mm:ss")
             })
 
-            return res.status(200).end();
+             res.status(200).end();
+
+
+            //If user is making first deposit
+            if (!!firstDeposit === false){
+                await db("users").where("id", userId)
+                    .update({firstDeposit: true})
+
+                if (amount >= 5){ //if first deposit amount is greater than 10
+                    await db("user_promos").where("userId", userId)
+                        .update({ active: true})
+                }else {
+                    await db("user_promos").where("userId", userId)
+                        .update({ active: false})
+                }
+            }
+
         }catch (e) {
             logger.error("admin, transactions, deposit");
             logger.error(e);

@@ -12,7 +12,7 @@ const drawController = {
             const pageSize = req.query.pageSize || 10;
 
 
-            const drawNumbers = await db.raw(`SELECT SQL_CALC_FOUND_ROWS * FROM machineNumbers
+            const drawNumbers = await db.raw(`SELECT SQL_CALC_FOUND_ROWS * FROM machine_numbers
                                     ORDER BY id DESC LIMIT ${pageSize} OFFSET ${(page - 1) * pageSize}`)
 
             const [total] = await db.raw('SELECT FOUND_ROWS() as total');
@@ -62,7 +62,7 @@ const drawController = {
         if (machineNumbers.length !== 5) return res.status(400).send("Machine numbers must be 5");
 
         try {
-            await db('machineNumbers').insert({
+            await db('machine_numbers').insert({
                 drawDate: date ? date : moment().format("YYYY-MM-DD"),
                 numbers: JSON.stringify(drawNumbers),
                 machineNumbers: JSON.stringify(machineNumbers)
@@ -107,7 +107,7 @@ const drawController = {
         if (machineNumbers.length !== 5) return res.status(400).send("Machine numbers must be 5");
 
         try {
-            await db('machineNumbers').where('id', id)
+            await db('machine_numbers').where('id', id)
                 .update({
                     numbers: JSON.stringify(drawNumbers),
                     machineNumbers: JSON.stringify(machineNumbers)
@@ -126,7 +126,7 @@ const drawController = {
     //delete draw
     destroy: async (req, res) => {
         try {
-            await db('machineNumbers').where('id', req.body.id).del();
+            await db('machine_numbers').where('id', req.body.id).del();
             return res.status(200).end();
         }catch (e) {
             logger.error('admin, controllers drawController destroy');
@@ -146,7 +146,7 @@ const drawController = {
             await db.transaction(async trx => {
 
                 //query draw numbers
-                const queryDrawNumbers = await trx('machineNumbers').where({id}).limit(1);
+                const queryDrawNumbers = await trx('machine_numbers').where({id}).limit(1);
 
                 //if draw numbers not found
                 if (!queryDrawNumbers.length) return res.status(400).send("Sorry selected draw was not found");
@@ -163,7 +163,7 @@ const drawController = {
 
                 //If no tickets were found
                 if (!tickets.length){
-                    await trx('machineNumbers').where({id}).update({closed: true});
+                    await trx('machine_numbers').where({id}).update({closed: true});
                     return res.status(200).end();
                 }
 
@@ -208,7 +208,7 @@ const drawController = {
                     .update({ticketStatus: 'closed'});
 
                 //close draw
-                await trx('machineNumbers').where({id}).update({closed: true});
+                await trx('machine_numbers').where({id}).update({closed: true});
 
 
                 return res.status(200).end();

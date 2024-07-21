@@ -12,7 +12,7 @@ const auth = async (req, res, next) => {
 
         const token = req.header("Authorization").replace("Bearer ", "");
         const decoded = jwt.verify(token, config.JWT_SECRET);
-        const user = await db("adminUsers")
+        const user = await db("admin_users")
             .where({id: decoded.id})
             .select("id", "displayName", "role", "isActive","specialCode")
             .limit(1);

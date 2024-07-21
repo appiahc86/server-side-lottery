@@ -9,6 +9,7 @@ const settingsIndexController = {
             const query = await db("settings").where('id', 1).limit(1);
             return res.status(200).send(query[0])
         }catch (e) {
+            logger.error("admin, controllers settingsIndexController");
             logger.error(e);
             return res.status(400).send("Could not fetch game status")
         }

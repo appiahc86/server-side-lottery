@@ -55,7 +55,7 @@ const lotteryController = {
           //Check if user has promo
             let bonus = 0;
             if (req.body.promo){
-                let query = await db('userPromos').where({id: req.body.promo}).select('amount').limit(1);
+                let query = await db('user_promos').where({id: req.body.promo}).select('amount').limit(1);
                 bonus = query[0] ? parseFloat(query[0].amount) : 0;
             }
 
@@ -93,14 +93,14 @@ const lotteryController = {
                 if (bonus >= payable){ // If bonus is greater than or equal to payable
 
                     // Pay with bonus
-                    await trx('userPromos').where('id', req.body.promo)
+                    await trx('user_promos').where('id', req.body.promo)
                         .decrement('amount', payable)
                     bonusLeft = bonus - payable;
 
                 }else if (bonus > 0 && bonus < payable){ //if bonus > 0 and less than payable
 
                     //Pay with bonus and user's balance
-                    await trx('userPromos').where('id', req.body.promo)
+                    await trx('user_promos').where('id', req.body.promo)
                         .update({amount: 0})
                     const amountToDeduct = payable - bonus;
                     await trx('users').where('id', req.user.id)
@@ -109,7 +109,7 @@ const lotteryController = {
 
                 }else { //if No bonus
 
-                    //Pay witn user's account balance
+                    //Pay with user's account balance
                     await trx("users").where("id", req.user.id)
                         .decrement("balance", payable)
                     req.user.balance = parseFloat(req.user.balance) - payable;

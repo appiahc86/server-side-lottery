@@ -163,7 +163,7 @@ const userAuthController = {
             });
 
            //Add first deposit promo. this will not be active until first deposit is > 5
-           await db('userPromos').insert({
+           await db('user_promos').insert({
                promoId: 1,
                userId: user[0],
                amount: 10
@@ -172,13 +172,11 @@ const userAuthController = {
            const token = jwt.sign({ id: user[0], specialCode: specialCode }, config.JWT_SECRET);
             res.status(201).send({token: token});
 
-
         }catch (e) {
             if (e.code === 'ER_DUP_ENTRY') return res.status(400).send('Sorry, this number already exists');
             logger.error('client, userAuthController create');
             logger.error(e);
             return res.status(400).send("Sorry your request was not successful");
-
         } // ./Catch block
 
 

@@ -58,7 +58,7 @@ const indexController = {
                     //Set first deposit promo to active
                     const amount = parseFloat(data.data.amount) / 100;
                     if (data.data.metadata.first_deposit.toString() === '0' && amount >= 5){
-                        await db('userPromos').where({promoId: 1, userId: data.data.metadata.user_id})
+                        await db('user_promos').where({promoId: 1, userId: data.data.metadata.user_id})
                             .update({active: true})
                     }
 

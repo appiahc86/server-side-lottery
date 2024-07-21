@@ -1,9 +1,9 @@
 const db = require("../config/db");
 
 const AdminUser = async () => {
-    if (!await db.schema.hasTable('adminUsers')){
+    if (!await db.schema.hasTable('admin_users')){
 
-        await db.schema.createTable('adminUsers', table => {
+        await db.schema.createTable('admin_users', table => {
             table.increments('id').primary();
             table.string('displayName', 10).notNullable();
             table.string('phone', 15).unique();
@@ -17,7 +17,7 @@ const AdminUser = async () => {
         });
 
 
-        await db('adminUsers').insert(
+        await db('admin_users').insert(
             {
                 displayName: "Daniel",
                 phone: "550452587",

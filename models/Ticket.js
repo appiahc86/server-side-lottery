@@ -9,6 +9,7 @@ const Ticket = async () => {
             table.json('numbers').index().notNullable();
             table.enum('ticketStatus', ['open', 'closed']).defaultTo('open');
             table.float('amount').notNullable();
+            table.boolean('recorded').defaultTo(false);
             table.float('payable').notNullable();
             table.date('ticketDate').index();
             table.dateTime('createdAt');

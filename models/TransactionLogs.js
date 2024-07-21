@@ -1,9 +1,9 @@
 const db = require("../config/db");
 
 const TransactionLogs = async () => {
-    if (!await db.schema.hasTable('transactionLogs')){
+    if (!await db.schema.hasTable('transaction_logs')){
 
-        await db.schema.createTable('transactionLogs', table => {
+        await db.schema.createTable('transaction_logs', table => {
             table.bigIncrements('id').primary();
             table.bigInteger('userId').unsigned().notNullable().index();
             table.enum('type', ['deposit', 'withdrawal', 'stake']).notNullable();

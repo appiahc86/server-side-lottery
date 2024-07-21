@@ -35,7 +35,7 @@ const indexController = {
     //get game results
     getGameResults: async (req, res) => {
         try {
-            const query = await db('machineNumbers').select('drawDate', 'numbers')
+            const query = await db('machine_numbers').select('drawDate', 'numbers')
                 .orderBy('id', 'DESC').limit(1);
 
             res.status(200).send({gameResults: query, date: moment()});
@@ -51,7 +51,7 @@ const indexController = {
     //Get user promos
     getUserPromos: async (req, res) => {
         try {
-            const promos = await db('userPromos')
+            const promos = await db('user_promos')
                 .where({userId: req.user.id, promoId: 1})
                 .limit(1);
 

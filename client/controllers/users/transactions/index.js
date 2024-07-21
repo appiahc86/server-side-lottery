@@ -38,7 +38,7 @@ const userTransactions  = {
 
         try {
 
-            //Check if withdrawals are disabled by client
+            //Check if withdrawals are disabled by admin
             const settings = await db('settings').where('id', 1);
             if (!!settings[0].withdrawals === false)
                 return res.status(400).send(`Sorry withdrawals have been disabled by admin`);
@@ -73,7 +73,7 @@ const userTransactions  = {
                         //TODO Prompt admin by SMS
 
                     //Set first deposit bonus to 0
-                    await db('userPromos').where('promoId', 1)
+                    await db('user_promos').where('promoId', 1)
                         .andWhere('userId', req.user.id)
                         .update({amount: 0});
 

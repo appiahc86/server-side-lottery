@@ -34,7 +34,7 @@ const userAuthController = {
             const specialCode = generateRandomNumber();
 
             //Save to db
-            await db("adminUsers").insert({
+            await db("admin_users").insert({
                 phone: phoneNumber,
                 password: hash,
                 specialCode,
@@ -68,7 +68,7 @@ const userAuthController = {
 
 
             //find user in db
-            const user = await db("adminUsers").where("phone", phoneNumber);
+            const user = await db("admin_users").where("phone", phoneNumber);
 
             //If user does not exist
             if (!user.length) return res.status(400).send("Sorry, this user does not exist")
@@ -112,7 +112,7 @@ const userAuthController = {
             if (!password.match(regex)) return res.status(400).send("Password does not meet requirements");
 
             //Query for user in db
-            const query = await db('adminUsers').where('id', req.user.id);
+            const query = await db('admin_users').where('id', req.user.id);
 
             //If user not found
             if (!query.length) return res.status(400).send("Sorry, this user was not found");
@@ -134,7 +134,7 @@ const userAuthController = {
             const specialCode = generateRandomNumber();
 
             //Update password in db
-            await db('adminUsers').where({id: query[0].id})
+            await db('admin_users').where({id: query[0].id})
                 .update({password: hash, specialCode: specialCode });
 
             res.status(200).end();
