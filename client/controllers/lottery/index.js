@@ -33,7 +33,7 @@ const lotteryController = {
 
 
                                         // ..........validation..............
-            if (!req.body.amountToStake || req.amountToStake < 1) return res.status(400).send("Amount should be at least GHS 1");
+            if (!req.body.amountToStake) return res.status(400).send("Please enter amount to stake");
             if (req.body.selectedNumbers.length < 2) return res.status(400).send("Please Select at least two numbers");
 
             let testDuplicates = [];
@@ -47,6 +47,7 @@ const lotteryController = {
 
             //calculate payable
             const payable = stakeFunction(req.body.selectedNumbers.length, req.body.amountToStake);
+            if (!payable || payable < 1) return res.status(400).send("Payable should be at least GHS 1");
 
             //if payable is less than 1
             if (payable < 1) return res.status(400).send("Minimum amount should be 1");
