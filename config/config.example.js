@@ -6,6 +6,7 @@ const config = {
     JWT_SECRET: "",
     SMS_API_KEY: "",
     SMS_SENDER: "",
+    SMS_NUMBER: "",
     PAYSTACK_SECRET_KEY: "",
     PAYMENT_EMAIL: ""
 }

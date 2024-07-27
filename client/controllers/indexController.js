@@ -12,6 +12,8 @@ const indexController = {
             const query = await db.raw(`SELECT JSON_EXTRACT(list, '$[0]', '$[1]', '$[2]') as images FROM images;`);
 
             images =  JSON.parse(query[0][0].images) || [];
+            let todayDrawPerformed = false;
+            const today = moment().format("YYYY-MM-DD");
 
             const gameStatus = await db('settings').select('gameStatus')
                 .where('id', 1)
@@ -24,7 +26,20 @@ const indexController = {
                 })
             }
 
-            res.status(200).send({images, date: moment(), gameStatus: gameStatus[0].gameStatus});
+            const drawNumbers = await db('machine_numbers').orderBy('id', 'desc').limit(1);
+           if (drawNumbers.length > 0){
+               // if today's draw is performed
+               if(moment(drawNumbers[0].drawDate).format("YYYY-MM-DD") === today && drawNumbers[0].closed)
+                todayDrawPerformed = true;
+           }
+
+            // console.log(todayDrawPerformed)
+            res.status(200).send({
+                images,
+                date: moment(),
+                gameStatus: gameStatus[0].gameStatus,
+                todayDrawPerformed
+            });
         }catch (e) {
             logger.error('client, index controller getImages');
             logger.error(e);

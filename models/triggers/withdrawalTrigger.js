@@ -7,9 +7,9 @@ const withdrawalTrigger =  () => {
 CREATE TRIGGER IF NOT EXISTS withdrawal_trigger
 AFTER UPDATE ON transactions FOR EACH ROW
 BEGIN
-  IF NEW.status = 'successful' AND OLD.status = 'pending' AND OLD.transactionType = 'withdrawal' THEN
+  IF NEW.status = 'failed' AND OLD.status = 'pending' AND OLD.transactionType = 'withdrawal' THEN
     UPDATE users
-    SET balance = balance - OLD.amount
+    SET balance = balance + OLD.amount
     WHERE id = OLD.userId;   
   END IF;
 END;

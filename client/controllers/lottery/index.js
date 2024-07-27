@@ -12,15 +12,26 @@ const lotteryController = {
 
             let today = moment();
             let currentHour = today.hours();
+            let todayDrawPerformed = false;
 
-            //Close the game between 7 pm and 8pm
-            if (currentHour >= 19 && currentHour < 20) {
+            //check if draw is performed
+            const drawNumbers = await db('machine_numbers').orderBy('id', 'desc').limit(1);
+            if (drawNumbers.length > 0){
+                // if today's draw is performed
+                if(moment(drawNumbers[0].drawDate).format("YYYY-MM-DD") ===
+                    today.format("YYYY-MM-DD") && drawNumbers[0].closed)
+                    todayDrawPerformed = true;
+            }
+
+
+            //Close the game between 7 pm and 8pm if today's draw is not performed.
+            if (currentHour >= 19 && currentHour < 20 && todayDrawPerformed === false) {
                 return res.status(400).send("Sorry, game is closed. Please come back after 8pm");
             }
 
 
             //Open the game for tomorrow
-            if (currentHour >= 20 ){
+            if (currentHour >= 20 || !!todayDrawPerformed){
                today = moment().add(1, 'days')
             }
 

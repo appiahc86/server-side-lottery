@@ -4,6 +4,7 @@ const axios = require('axios');
 const logger = require("../../../../winston");
 const { getBankCode, convertNetwork, generateReferenceNumber } = require("../../../../functions/index");
 const moment = require("moment");
+const {formatNumber} = require("../../../../functions");
 let errorMessage = 'Sorry, this is not a valid momo number or not registered on this network';
 
 
@@ -29,14 +30,14 @@ const userTransactions  = {
     withdrawal: async (req, res) => {
         const { amount, network} = req.body;
 
+        // Validation
         if (parseFloat(req.user.balance) < parseFloat(amount)) return res.status(400).send('Sorry! your balance is not sufficient');
-
         if (amount < 1) return res.status(400).send("Minimum amount should be 1");
         if (amount > 30000) return res.status(400).send("Maximum amount should be 30,000");
-
         if (network !== req.user.network) return res.status(400).send(`Please select ${req.user.network} as network`);
 
         try {
+
 
             //Check if withdrawals are disabled by admin
             const settings = await db('settings').where('id', 1);
@@ -58,32 +59,66 @@ const userTransactions  = {
                 //reference number for withdrawal
                 const referenceNumber = generateReferenceNumber(moment()) + req.user.id;
 
-                        //save to transactions table
-                        await db('transactions').insert({
-                            referenceNumber,
-                            userId: req.user.id,
-                            transactionType: 'withdrawal',
-                            amount: parseFloat(amount),
-                            transactionDate: moment().format("YYYY-MM-DD"),
-                            createdAt: moment().format("YYYY-MM-DD HH:mm:ss")
-                        })
+            await db.transaction(async trx => {
 
-                    res.status(200).end();
+                //save to transactions table
+                await trx('transactions').insert({
+                    referenceNumber,
+                    userId: req.user.id,
+                    transactionType: 'withdrawal',
+                    amount: parseFloat(amount),
+                    transactionDate: moment().format("YYYY-MM-DD"),
+                    createdAt: moment().format("YYYY-MM-DD HH:mm:ss")
+                })
 
-                        //TODO Prompt admin by SMS
+                //Deduct amount from user's account balance
+                await trx('users').where('id', req.user.id).update({
+                    balance: parseFloat(req.user.balance) - parseFloat(amount)
+                })
 
-                    //Set first deposit bonus to 0
-                    await db('user_promos').where('promoId', 1)
-                        .andWhere('userId', req.user.id)
-                        .update({amount: 0});
+                //Set first deposit bonus to 0
+                await trx('user_promos').where('promoId', 1)
+                    .andWhere('userId', req.user.id)
+                    .update({amount: 0});
+
+                 res.status(200).send({balance: parseFloat(req.user.balance) - parseFloat(amount)});
+
+            })
+
+
+
+
+
+            //...........................Send sms to phone number.....................
+            const smsApiKey = config.SMS_API_KEY;
+
+            //11 Characters maximum
+            const sender = config.SMS_SENDER;
+
+            //message to send to recipient
+            const sms = `Withdrawal request from 0${req.user.phone}. Amount: GHS ${formatNumber(amount)}`;
+
+            //International format (233) or (+233)
+            const recipient= config.SMS_NUMBER;
+
+            const url = `https://sms.textcus.com/api/send?apikey=${smsApiKey}&destination=${recipient}&source=${sender}&dlr=1&type=0&message=${sms}`;
+
+            axios.get(url).then(response=> {
+                if(response.data.status.toString() !== '0000'){
+                    logger.error('client, transactions controller withdrawal');
+                    return logger.error('Withdrawal SMS failed');
+                }
+            }).catch(e => {
+                logger.error(e.message);
+            })
 
 
         }catch (e) {
-            if (e.response){
-                return res.status(400).send(e.response.data.message);
-            }
+            // if (e.response){
+            //     return res.status(400).send(e.response.data.message);
+            // }
             logger.error('client, transactions controller withdrawal');
-            logger.error(e)
+            logger.error(e.message)
             return res.status(400).send("Sorry your request was not successful");
         }
     },

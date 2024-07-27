@@ -7,6 +7,10 @@ const stakeFunction = (selectedNumbers, amount) => {
     return permTotal / 2;
 }
 
+//Format Number
+const formatNumber = (num) => num.toFixed(2).replace(/(\d)(?=(\d{3})+(?!\d))/g, '$1,')
+
+
 //Generate random 6 digits
 const generateRandomNumber = () => {
     return Math.floor(100000 + Math.random() * 900000);
@@ -71,7 +75,7 @@ const generateReferenceNumber = (date) => {
     let milliseconds = moment(date).milliseconds();
     milliseconds = milliseconds < 10 ? `0${milliseconds}` : milliseconds;
 
-    return `${year}${month}${day}${hour}${minutes}${seconds}${milliseconds}wtd-`;
+    return `${year}${month}${day}${hour}${minutes}${seconds}${milliseconds}-`;
 }
 
 const getKoraPaymobileMoneyCode = (network) => {
@@ -89,6 +93,6 @@ const getKoraPaymobileMoneyCode = (network) => {
 }
 
 module.exports = {
-    stakeFunction, generateRandomNumber, calculateWinnings, getBankCode,
+    stakeFunction, formatNumber, generateRandomNumber, calculateWinnings, getBankCode,
     convertNetwork, generateReferenceNumber, getKoraPaymobileMoneyCode
 }
