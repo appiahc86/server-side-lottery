@@ -19,11 +19,11 @@ const generateRandomNumber = () => {
 //calculate winnings
 const calculateWinnings = (chosenNumbers, amount) => {
 
-    if (chosenNumbers === 2) return amount * 200  //This is for 2 sure
+    if (chosenNumbers === 2) return  200 * amount; //This is for 2 sure
 
-    if (chosenNumbers === 3) return amount * 2000;  //if 3 numbers won
-    if (chosenNumbers === 4) return amount * 5500;  //if 4 numbers won
-    if (chosenNumbers === 5) return amount * 40000;  //if 5 numbers won
+    if (chosenNumbers === 3) return  3 * 200 * amount;  //if 3 numbers won
+    if (chosenNumbers === 4) return 6 * 200 * amount;  //if 4 numbers won
+    if (chosenNumbers === 5) return 10 * 200 * amount;  //if 5 numbers won
 
     return 0;
 }
