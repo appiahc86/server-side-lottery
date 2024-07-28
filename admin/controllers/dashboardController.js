@@ -15,8 +15,6 @@ const dashboardController = {
             //Annual Winnings
             const annualWinningsQuery = await db('winners')
                 .where('ticketDate', '>=', startOfYear)
-                .andWhere('ticketDate', '<=', today)
-                .groupBy('ticketDate')
                 .sum('amountWon as total')
 
 

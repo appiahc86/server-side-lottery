@@ -12,7 +12,7 @@ const Transaction = async () => {
             table.enum('status', ['pending', 'successful', 'failed']).index().defaultTo('pending');
             table.date('transactionDate').index().notNullable();
             table.dateTime('createdAt');
-            //TODO add approved or declined date
+            table.dateTime('dateModified').nullable();
             table.engine('InnoDB');
 
             table.foreign('userId').references('id').inTable('users').onDelete('CASCADE');

@@ -6,41 +6,7 @@ const {log} = require("winston");
 
 const transactionsController = {
 
-    //Get all transactions
-    index: async (req, res) => {
-        try {
-            const page = req.query.page || 1;
-            const pageSize = req.query.pageSize || 10;
-            // const today = moment().format("YYYY-MM-DD");
-
-           const transactions = await db.select('users.phone', 'transactions.id',
-               'transactions.transactionType', 'transactions.amount', 'transactions.status',
-               'transactions.referenceNumber', 'transactions.createdAt',
-               db.raw('COUNT(*) OVER () as total'))
-                .from('transactions')
-                .leftJoin('users', 'users.id', 'transactions.userId')
-                .offset((page - 1) * pageSize)
-                .limit(pageSize)
-               .orderBy('transactions.id', 'DESC')
-
-            const total = transactions.length ? transactions[0].total : 0;
-
-            return res.status(200).send({
-                data: transactions,
-                page,
-                pageSize,
-                totalRecords: total
-            });
-
-
-        }catch (e) {
-            logger.error("admin/transactions/index");
-            logger.error(e);
-            return res.status(400).send("Sorry your request was not successful");
-        }
-    },
-
-    //Get Withdrawals
+    //Get Withdrawals to approve or decline
     withdrawals: async (req, res) => {
         try {
             const page = req.query.page || 1;
@@ -84,14 +50,18 @@ const transactionsController = {
              if (!id) return res.status(400).send("Sorry, record not found");
 
             await db('transactions').where('id', id)
-                .update({status: 'successful'})
+                .update({
+                    status: 'successful',
+                    dateModified: moment().format("YYYY-MM-DD HH:mm:ss")
+                })
             res.status(200).end();
         }catch (e) {
             logger.error("admin, transactions, approve withdrawal");
-            logger.error(e);
+            logger.error(e.message);
             return res.status(400).send("Sorry your request was not successful");
         }
     },
+
 
     //Decline Withdrawal
     declineWithdrawal: async (req, res) => {
@@ -100,7 +70,10 @@ const transactionsController = {
             if (!id) return res.status(400).send("Sorry, record not found");
 
             await db('transactions').where('id', id)
-                .update({status: 'failed'})
+                .update({
+                    status: 'failed',
+                    dateModified: moment().format("YYYY-MM-DD HH:mm:ss")
+                })
             res.status(200).end();
         }catch (e) {
             logger.error("admin, transactions, decline withdrawal");
@@ -108,6 +81,7 @@ const transactionsController = {
             return res.status(400).send("Sorry your request was not successful");
         }
     },
+
 
     //Deposit number lookup
     lookup: async (req, res) => {
@@ -132,7 +106,8 @@ const transactionsController = {
         }
     },
 
-    //Deposit
+
+    //Make Deposit
     deposit: async (req, res) => {
         const { userId, amount, firstDeposit } = req.body;
 
@@ -177,6 +152,79 @@ const transactionsController = {
             return res.status(400).send("Sorry your request was not successful");
         }
     },
+
+
+    //View Deposits
+    viewDeposits: async (req, res) => {
+        try {
+            const page = req.query.page || 1;
+            const pageSize = req.query.pageSize || 10;
+            // const today = moment().format("YYYY-MM-DD");
+
+            const transactions = await db.select('users.phone', 'transactions.id',
+                 'transactions.amount', 'transactions.status',
+                'transactions.referenceNumber', 'transactions.createdAt',
+                db.raw('COUNT(*) OVER () as total'))
+                .from('transactions')
+                .leftJoin('users', 'users.id', 'transactions.userId')
+                .where('transactionType', 'deposit')
+                .offset((page - 1) * pageSize)
+                .limit(pageSize)
+                .orderBy('transactions.id', 'DESC')
+
+            const total = transactions.length ? transactions[0].total : 0;
+
+            return res.status(200).send({
+                data: transactions,
+                page,
+                pageSize,
+                totalRecords: total
+            });
+
+
+        }catch (e) {
+            logger.error("admin/transactions/index");
+            logger.error(e);
+            return res.status(400).send("Sorry your request was not successful");
+        }
+    },
+
+
+    //View Withdrawals
+    viewWithdrawals: async (req, res) => {
+        try {
+            const page = req.query.page || 1;
+            const pageSize = req.query.pageSize || 10;
+            // const today = moment().format("YYYY-MM-DD");
+
+            const transactions = await db.select('users.phone', 'transactions.id',
+                'transactions.amount', 'transactions.status',
+                'transactions.referenceNumber', 'transactions.createdAt',
+                db.raw('COUNT(*) OVER () as total'))
+                .from('transactions')
+                .leftJoin('users', 'users.id', 'transactions.userId')
+                .where('transactionType', 'withdrawal')
+                .offset((page - 1) * pageSize)
+                .limit(pageSize)
+                .orderBy('transactions.id', 'DESC')
+
+            const total = transactions.length ? transactions[0].total : 0;
+
+            return res.status(200).send({
+                data: transactions,
+                page,
+                pageSize,
+                totalRecords: total
+            });
+
+
+        }catch (e) {
+            logger.error("admin/transactions/index");
+            logger.error(e);
+            return res.status(400).send("Sorry your request was not successful");
+        }
+    },
+
 
     searchSingle: async (req, res) => {
         const { referenceNumber } = req.body;

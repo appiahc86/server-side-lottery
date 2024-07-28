@@ -148,12 +148,19 @@ const drawController = {
                 //query draw numbers
                 const queryDrawNumbers = await trx('machine_numbers').where({id}).limit(1);
 
+
                 //if draw numbers not found
                 if (!queryDrawNumbers.length) return res.status(400).send("Sorry selected draw was not found");
                 //if draw closed
                 if (queryDrawNumbers[0].closed) return res.status(400).send("Sorry draw is closed already");
 
                 let drawNumbers = JSON.parse(queryDrawNumbers[0].numbers);
+
+                //check if draw date is greater than today
+                const dateToCheck = moment(queryDrawNumbers[0].drawDate);
+                if (dateToCheck.isAfter(moment().format("YYYY-MM-DD"), 'day')) {
+                    return res.status(400).send("Sorry future draw cannot be performed today");
+                }
 
                 //query draw tickets
                 const tickets = await trx('tickets')

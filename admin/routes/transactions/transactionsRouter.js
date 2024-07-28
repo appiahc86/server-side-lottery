@@ -4,8 +4,6 @@ const router = express.Router();
 const transactionsController = require("../../controllers/transactions/transactionsController");
 const auth = require("../../middleware/auth");
 
-//Get Transactions
-router.get('/', auth,transactionsController.index);
 
 //Get Withdrawals
 router.get('/withdrawals', auth,transactionsController.withdrawals);
@@ -21,6 +19,13 @@ router.post('/deposit/lookup', auth,transactionsController.lookup);
 
 //Deposit
 router.post('/deposit', auth, transactionsController.deposit);
+
+//View Deposits
+router.get('/view-deposits', auth,transactionsController.viewDeposits);
+
+//View Withdrawals
+router.get('/view-withdrawals', auth,transactionsController.viewWithdrawals);
+
 
 //Search by reference number
 router.post('/search-single', auth, transactionsController.searchSingle);
