@@ -200,17 +200,17 @@ const userAuthController = {
 
 
             //If user does not exist
-            if (!user.length) return res.status(400).send("Sorry, this user does not exist")
+            if (!user.length) return res.status(400).send("Sorry, username or password is invalid")
 
             //Compare passwords
             const isMatched = await bcrypt.compareSync(password, user[0].password);
 
             //If passwords do not match
-            if (!isMatched) return res.status(400).send("Sorry, you entered a wrong password.")
+            if (!isMatched) return res.status(400).send("Sorry, username or password is invalid")
 
 
             //if user is not mark as active (account suspended)
-            if (!user[0].isActive) return res.status(400).send("Sorry, this account is suspended. Please contact client");
+            if (!user[0].isActive) return res.status(400).send("Sorry, this account is suspended. Please contact Admin");
 
             //Generate JWT token
             const token = jwt.sign({ id: user[0].id, specialCode: user[0].specialCode }, config.JWT_SECRET);
