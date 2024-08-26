@@ -137,12 +137,21 @@ const transactionsController = {
                 await db("users").where("id", userId)
                     .update({firstDeposit: true})
 
-                if (amount >= 5){ //if first deposit amount is greater than 10
-                    await db("user_promos").where("userId", userId)
-                        .update({ active: true})
+                if (amount >= 5){ //if first deposit amount is greater than 5
+
+                    await db('user_promos').insert({
+                        promoId: 1,
+                        userId,
+                        amount: 10,
+                        active: true
+                    })
                 }else {
-                    await db("user_promos").where("userId", userId)
-                        .update({ active: false})
+                    await db('user_promos').insert({
+                        promoId: 1,
+                        userId,
+                        amount: 10,
+                        active: false
+                    })
                 }
             }
 

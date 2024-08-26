@@ -58,25 +58,7 @@ const userAuthController = {
                 throw new Error(notVerifiedError)
             })
 
-            //Korapay momo number verification
-            // await axios.post(
-            //     `https://api.korapay.com/merchant/api/v1/misc/mobile-money/resolve`,
-            //     {
-            //         mobileMoneyCode: koraPaymobileMoneyCode,
-            //         phoneNumber: '0'+phoneNumber,
-            //         currency: "GHS"
-            //     },
-            //     {
-            //         headers: { 'Content-Type': 'application/json'}
-            //     }
-            // ).then(response => {
-            //     if (response.data.status !== true) return res.status(400).send(notVerifiedError);
-            //     if(response.data.status === true){
-            //         accountName = response?.data?.data?.account_name || ""; //Set account name
-            //     }
-            // }).catch(e => {
-            //     throw new Error(notVerifiedError)
-            // })
+
 
 
             if (process.env.NODE_ENV !== 'production') {
@@ -91,22 +73,32 @@ const userAuthController = {
 
 
     //................Send sms to phone number.............
-            const smsApiKey = config.SMS_API_KEY;
+            const host = 'api.smsonlinegh.com';
+            const endPoint = `http://${host}/v5/message/sms/send`;
 
-            //11 Characters maximum
-            const sender = config.SMS_SENDER;
+            const recipient= '0'+phoneNumber;
 
-            //message to send to recipient
-            const sms = `Your Verification code is: ${verificationCode}`;
+            const msgData = {
+                text: `Your Verification code is: ${verificationCode}`,
+                type: 0,    // GSM default
+                sender: config.SMS_SENDER,
+                destinations: [recipient]
+            };
 
-            //International format (233) or (+233)
-            const recipient= '233'+phoneNumber;
 
 
-            const url = `https://sms.textcus.com/api/send?apikey=${smsApiKey}&destination=${recipient}&source=${sender}&dlr=1&type=0&message=${sms}`;
-
-            axios.get(url).then(response=>{
-                if(response.data.status.toString() === '0000') {
+            axios.post(endPoint,
+                msgData,
+                {
+                    headers: {
+                        'Host': `${host}`,
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json',
+                        'Authorization': config.SMS_API_KEY
+                    }
+                }
+                ).then(response=>{
+                if(response.status === 200) {
                     // Encrypt Verification Code
                     const ciphertext = CryptoJS.AES.encrypt(`${verificationCode}`, 'secretKey@').toString();
                     return res.status(200).send({verificationCode: ciphertext, accountName})
@@ -162,12 +154,7 @@ const userAuthController = {
                 createdAt: moment().format("YYYY-MM-DD HH:mm:ss")
             });
 
-           //Add first deposit promo. this will not be active until first deposit is > 5
-           await db('user_promos').insert({
-               promoId: 1,
-               userId: user[0],
-               amount: 10
-           })
+
 
            const token = jwt.sign({ id: user[0], specialCode: specialCode }, config.JWT_SECRET);
             res.status(201).send({token: token});
@@ -250,34 +237,54 @@ const userAuthController = {
             if (process.env.NODE_ENV !== 'production') return res.status(200).end();
 
             //...........................Send sms to phone number.....................
-            const smsApiKey = config.SMS_API_KEY;
 
-            //11 Characters maximum
-            const sender = config.SMS_SENDER;
 
-            //message to send to recipient
-            const sms = `Your password reset code is: ${code}`;
+            const host = 'api.smsonlinegh.com';
+            const endPoint = `http://${host}/v5/message/sms/send`;
 
-            //International format (233) or (+233)
-            const recipient= '233'+phoneNumber;
+            const recipient= '0'+phoneNumber;
 
-            const url = `https://sms.textcus.com/api/send?apikey=${smsApiKey}&destination=${recipient}&source=${sender}&dlr=1&type=0&message=${sms}`;
+            const msgData = {
+                text: `Your password reset code is: ${code}`,
+                type: 0,    // GSM default
+                sender: config.SMS_SENDER,
+                destinations: [recipient]
+            };
 
-            axios.get(url).then(response=> {
-                if(response.data.status.toString() === '0000') return res.status(200).end();
+
+
+            axios.post(endPoint,
+                msgData,
+                {
+                    headers: {
+                        'Host': `${host}`,
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json',
+                        'Authorization': config.SMS_API_KEY
+                    }
+                }
+            ).then(response=> {
+                if(response.status === 200) {
+                    return res.status(200).end();
+                }
+
                 return res.status(400).send("Failed to send password reset code. Please contact Admin");
             })
 
                 .catch((err) => {
                     logger.error(err)
-                    return res.status(400).send("Failed to send password reset code. Please contact Admin");
+                    return res.status(400).send("Failed to send verification code. Please contact Admin");
                 })
+
+
 
         }catch (e) {
             logger.error('client, userAuthController requestPasswordResetCode');
             logger.error(e);
             return res.status(400).send("Sorry your request was not successful");
         }
+
+
     },
 
 

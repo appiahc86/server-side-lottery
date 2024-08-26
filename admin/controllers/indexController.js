@@ -11,17 +11,31 @@ const indexController = {
     //Get sms balance
     getSmsBalance: async (req, res) => {
         try {
-            axios.get(`https://sms.textcus.com/api/balance?apikey=${config.SMS_API_KEY}`)
-                .then(response => {
-                    if (response.data.status.toString() === '0000'){
-                       return res.status(200).send(response.data.balance)
+
+
+            const endPoint = `http://api.smsonlinegh.com/v5/account/balance`;
+
+            axios.post(endPoint,
+                {},
+                {
+                    headers: {
+                        'Host': 'api.smsonlinegh.com',
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json',
+                        'Authorization': config.SMS_API_KEY
                     }
-                    return res.status(400).end();
-                })
-                .catch(e => {
-                    logger.error(e)
-                    res.status(400).end()
-                })
+                }
+            ).then(response=>{
+                if(response.status === 200) {
+                    return res.status(200).send(`${response?.data?.data?.balance}`)
+                }
+                return res.status(400).end();
+            }).catch((err) => {
+                logger.error(err)
+                return res.status(400).end();
+            })
+
+
         }catch (e) {
             logger.error(e);
             res.status(400).end();

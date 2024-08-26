@@ -5,6 +5,7 @@ const logger = require("../../../../winston");
 const { getBankCode, convertNetwork, generateReferenceNumber } = require("../../../../functions/index");
 const moment = require("moment");
 const {formatNumber} = require("../../../../functions");
+const CryptoJS = require("crypto-js");
 let errorMessage = 'Sorry, this is not a valid momo number or not registered on this network';
 
 
@@ -86,31 +87,39 @@ const userTransactions  = {
             })
 
 
+            //................Send sms to phone number.............
+            const host = 'api.smsonlinegh.com';
+            const endPoint = `http://${host}/v5/message/sms/send`;
 
-
-
-            //...........................Send sms to phone number.....................
-            const smsApiKey = config.SMS_API_KEY;
-
-            //11 Characters maximum
-            const sender = config.SMS_SENDER;
-
-            //message to send to recipient
-            const sms = `Withdrawal request from 0${req.user.phone}. Amount: GHS ${formatNumber(amount)}`;
-
-            //International format (233) or (+233)
             const recipient= config.SMS_NUMBER;
 
-            const url = `https://sms.textcus.com/api/send?apikey=${smsApiKey}&destination=${recipient}&source=${sender}&dlr=1&type=0&message=${sms}`;
+            const msgData = {
+                text: `Withdrawal request from 0${req.user.phone}. Amount: GHS ${formatNumber(amount)}`,
+                type: 0,    // GSM default
+                sender: config.SMS_SENDER,
+                destinations: [recipient]
+            };
 
-            axios.get(url).then(response=> {
-                if(response.data.status.toString() !== '0000'){
+
+
+            axios.post(endPoint,
+                msgData,
+                {
+                    headers: {
+                        'Host': `${host}`,
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json',
+                        'Authorization': config.SMS_API_KEY
+                    }
+                }
+            ).then(response=>{
+                if(response.status !== 200) {
                     logger.error('client, transactions controller withdrawal');
                     return logger.error('Withdrawal SMS failed');
                 }
-            }).catch(e => {
-                logger.error(e.message);
-            })
+            }).catch((err) => {
+                    logger.error(err)
+                })
 
 
         }catch (e) {

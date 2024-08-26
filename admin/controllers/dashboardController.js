@@ -35,12 +35,11 @@ const dashboardController = {
             }
 
 
-
             return res.status(200).send({
                 userCount: usersCount[0][0].count,
                 deposits,
                 withdrawals,
-                annualWinnings: annualWinningsQuery.length ? annualWinningsQuery[0].total : 0
+                annualWinnings: annualWinningsQuery.length ? annualWinningsQuery[0]?.total || 0 : 0
             })
         }catch (e) {
             logger.error('admin, controllers dashboardController index');
