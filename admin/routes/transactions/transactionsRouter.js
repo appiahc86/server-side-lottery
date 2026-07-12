@@ -4,17 +4,23 @@ const router = express.Router();
 const transactionsController = require("../../controllers/transactions/transactionsController");
 const auth = require("../../middleware/auth");
 
-//Get Transactions
-router.get('/', auth,transactionsController.index);
 
-//Search transaction
-router.post('/single', auth, transactionsController.search);
+//View latest transactions
+router.get('/list', auth,transactionsController.index);
 
-//Mark As Successful
-router.post('/mark-as-successful', auth, transactionsController.markAsSuccessful)
+//List withdrawals to be approved
+router.get('/withdrawals', auth,transactionsController.withdrawals);
 
-//Mark As Failed
-router.post('/mark-as-failed', auth, transactionsController.markAsFailed)
+//Approve Withdrawal
+router.post('/withdrawals/approve', auth,transactionsController.approveWithdrawal);
+
+//Decline Withdrawal
+router.post('/withdrawals/decline', auth,transactionsController.declineWithdrawal);
+
+
+//Search by reference number
+router.post('/search-single', auth, transactionsController.searchSingle);
+
 
 
 module.exports = router;

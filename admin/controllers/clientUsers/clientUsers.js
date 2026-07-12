@@ -20,7 +20,8 @@ const clientUsersController  = {
                     user.network = undefined;
                     user.passwordResetCode = undefined;
                     user.specialCode = undefined;
-                    user.createdAt = undefined;
+                    user.created_at = undefined;
+                    user.updated_at = undefined;
                 })
             }
 
@@ -54,6 +55,43 @@ const clientUsersController  = {
 
         }catch (e) {
             logger.error('admin, controllers clientUsers search');
+            logger.error(e);
+            return res.status(400).send("Sorry your request was not successful");
+        }
+    },
+
+    //Get User's Logs
+    getUserLogs: async (req, res) => {
+        try {
+
+           const phoneNumber = req.body.phone;
+
+           //validation
+           if (!phoneNumber || phoneNumber.toString().length !== 9)
+               return res.status(400).send('Please enter a valid phone number');
+
+            const user = await db("users")
+                .where({ phone: phoneNumber })
+                .limit(1);
+
+            if (!user.length)  return res.status(400).send('Sorry this user was not found');
+
+
+            const logs = await db(`transaction_logs`)
+                .where('userId', user[0].id)
+                .select("id","type","amount", "oldBalance",
+                    "newBalance", "description", "created_at")
+                .orderBy("id", "DESC")
+                .limit(20)
+
+
+
+            return res.status(200).send({
+                data: logs
+            });
+
+        }catch (e) {
+            logger.error('admin, controllers clientUsers getUserLogs');
             logger.error(e);
             return res.status(400).send("Sorry your request was not successful");
         }

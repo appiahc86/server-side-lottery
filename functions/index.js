@@ -7,6 +7,10 @@ const stakeFunction = (selectedNumbers, amount) => {
     return permTotal / 2;
 }
 
+//Format Number
+const formatNumber = (num) => num.toFixed(2).replace(/(\d)(?=(\d{3})+(?!\d))/g, '$1,')
+
+
 //Generate random 6 digits
 const generateRandomNumber = () => {
     return Math.floor(100000 + Math.random() * 900000);
@@ -15,11 +19,11 @@ const generateRandomNumber = () => {
 //calculate winnings
 const calculateWinnings = (chosenNumbers, amount) => {
 
-    if (chosenNumbers === 2) return amount * 200  //This is for 2 sure
+    if (chosenNumbers === 2) return  200 * amount; //This is for 2 sure
 
-    if (chosenNumbers === 3) return amount * 2000;  //if 3 numbers won
-    if (chosenNumbers === 4) return amount * 5500;  //if 4 numbers won
-    if (chosenNumbers === 5) return amount * 40000;  //if 5 numbers won
+    if (chosenNumbers === 3) return  3 * 200 * amount;  //if 3 numbers won
+    if (chosenNumbers === 4) return 6 * 200 * amount;  //if 4 numbers won
+    if (chosenNumbers === 5) return 10 * 200 * amount;  //if 5 numbers won
 
     return 0;
 }
@@ -30,7 +34,7 @@ const getBankCode = (newtwork) => {
     switch (newtwork) {
         case 'airtelTigo': type = 'ATL'
         break;
-        case 'vodafone': type =  'VOD'
+        case 'telecel': type =  'VOD'
         break;
         default: type =  'MTN'
             break;
@@ -45,7 +49,7 @@ const convertNetwork = (newtwork) => {
     switch (newtwork) {
         case 'airtelTigo': type = 'tgo'
             break;
-        case 'vodafone': type =  'vod'
+        case 'telecel': type =  'vod'
             break;
         default: type =  'mtn'
             break;
@@ -71,12 +75,24 @@ const generateReferenceNumber = (date) => {
     let milliseconds = moment(date).milliseconds();
     milliseconds = milliseconds < 10 ? `0${milliseconds}` : milliseconds;
 
-    return `${year}${month}${day}${hour}${minutes}${seconds}${milliseconds}wtd`;
+    return `${year}${month}${day}${hour}${minutes}${seconds}${milliseconds}-`;
 }
 
+const getKoraPaymobileMoneyCode = (network) => {
+    let type = "0004";
+    switch (newtwork) {
+        case 'airtelTigo': type = '0005'
+            break;
+        case 'telecel': type =  '0006'
+            break;
+        default: type =  '0004'
+            break;
+    }
 
+    return type;
+}
 
 module.exports = {
-    stakeFunction, generateRandomNumber, calculateWinnings, getBankCode,
-    convertNetwork, generateReferenceNumber
+    stakeFunction, formatNumber, generateRandomNumber, calculateWinnings, getBankCode,
+    convertNetwork, generateReferenceNumber, getKoraPaymobileMoneyCode
 }

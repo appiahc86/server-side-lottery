@@ -1,9 +1,9 @@
 const db = require("../config/db");
 
 const UserPromo = async () => {
-    if (!await db.schema.hasTable('userPromos')){
+    if (!await db.schema.hasTable('user_promos')){
 
-        await db.schema.createTable('userPromos', table => {
+        await db.schema.createTable('user_promos', table => {
             table.increments('id').primary();
             table.bigInteger('promoId').unsigned().notNullable().index();
             table.bigInteger('userId').unsigned().notNullable().index();

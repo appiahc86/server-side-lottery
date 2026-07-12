@@ -9,8 +9,8 @@ const runTriggers = require("./models/triggers/index");
 const db = require("./config/db");
 const uploader = require("express-fileupload");
 const logger = require("./winston");
-const transactionJob = require("./cron");
-
+const cron = require('node-cron');
+const { pollPendingDeposits } = require("./cron");
 
 app.use(express.json());
 app.use(cors());
@@ -25,22 +25,35 @@ app.use(
 );
 
 
-//Run cron jobs
-transactionJob.start();
-
-
 //Set TimeZone
 process.env.TZ = 'Africa/Accra';
 
 
     //Create database tables
 (async () => {
-    // await db.raw(`SET time_zone = 'UTC';`);
     await db.raw("SET FOREIGN_KEY_CHECKS=0");
     await runMigration();
     await runTriggers();
     await db.raw("SET FOREIGN_KEY_CHECKS=1");
 })()
+
+
+
+// ============= CRON JOBS =============
+
+// Schedule polling every 15 minutes
+// Cron pattern: minute hour day month day-of-week
+// */15 * * * * = every 15 minutes
+cron.schedule('*/3 * * * *', async () => {
+
+    try {
+        await pollPendingDeposits();
+    } catch (error) {
+        logger.error('Cron job failed:', error);
+    }
+});
+
+
 
 const port = process.env.port || 3000;
 
@@ -78,6 +91,13 @@ app.use((req, res, next) => {
 })
 
 
+//Add io instance to each request
+app.use((req, res, next) => {
+    req.io = io;
+    next();
+})
+
+
 //Load routes
 const lotteryRouter = require("./client/routes/lottery/index");
 const userAuthRouter = require("./client/routes/users/auth/userAuthRoutes");
@@ -91,6 +111,7 @@ app.use("/lottery", lotteryRouter);
 app.use("/users", usersIndexRouter);
 app.use("/users/auth", userAuthRouter);
 app.use("/users/transactions", usersTransactionRouter);
+
 
 //Load Admin routes
 const adminUserAuthRouter = require("./admin/routes/users/auth/userAuthRoutes");
@@ -136,3 +157,7 @@ if (process.env.NODE_ENV !== 'production'){
         logger.info(`server running on port ${port}`);
     })
 }else server.listen();
+
+
+
+

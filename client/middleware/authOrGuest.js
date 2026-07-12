@@ -6,23 +6,29 @@ const logger = require("../../winston");
 
 
 
-const auth = async (req, res, next) => {
+const authOrGuest = async (req, res, next) => {
 
     try{
 
         const token = req.header("Authorization").replace("Bearer ", "");
+
+
+        //If User not logged in, continue with the request
+        if(token === "Bearer") return next();
+
+
         const decoded = jwt.verify(token, config.JWT_SECRET);
-        const user = await db("admin_users")
+        const user = await db("users")
             .where({id: decoded.id})
-            .select("id", "displayName", "role", "isActive","specialCode")
+            .select("id","phone",
+                "balance", "network","specialCode")
             .limit(1);
 
         //If user not found
         if (!user.length)  return res.status(401).send("Please login");
 
-
         //if special code does not match
-        if ( parseInt(user[0].specialCode ) !== parseInt(decoded.specialCode))
+        if (parseInt(user[0].specialCode ) !== parseInt(decoded.specialCode))
             return res.status(401).send("Please login");
 
         req.token = token;
@@ -36,4 +42,4 @@ const auth = async (req, res, next) => {
 }
 
 
-module.exports =  auth;
+module.exports =  authOrGuest;

@@ -1,27 +1,41 @@
 const axios = require("axios");
 const config = require("../../config/config");
 const db = require("../../config/db");
-const crypto = require('crypto');
 const logger = require("../../winston");
+const moment = require("moment");
 
-const secret = config.PAYSTACK_SECRET_KEY;
+
 
 const indexController = {
 
     //Get sms balance
     getSmsBalance: async (req, res) => {
         try {
-            axios.get(`https://sms.textcus.com/api/balance?apikey=${config.SMS_API_KEY}`)
-                .then(response => {
-                    if (response.data.status.toString() === '0000'){
-                       return res.status(200).send(response.data.balance)
+
+
+            const endPoint = `http://api.smsonlinegh.com/v5/account/balance`;
+
+            axios.post(endPoint,
+                {},
+                {
+                    headers: {
+                        'Host': 'api.smsonlinegh.com',
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json',
+                        'Authorization': config.SMS_API_KEY
                     }
-                    return res.status(400).end();
-                })
-                .catch(e => {
-                    logger.error(e)
-                    res.status(400).end()
-                })
+                }
+            ).then(response=>{
+                if(response.status === 200) {
+                    return res.status(200).send(`${response?.data?.data?.balance}`)
+                }
+                return res.status(400).end();
+            }).catch((err) => {
+                logger.error(err)
+                return res.status(400).end();
+            })
+
+
         }catch (e) {
             logger.error(e);
             res.status(400).end();
@@ -29,54 +43,62 @@ const indexController = {
     },
 
 
-// paystack Webhook
-    paystack: async (req, res) => {
+// Payment Webhook
+    paymentWebhook: async (req, res) => {
             //validate request
-            const hash = crypto.createHmac('sha512', secret).update(JSON.stringify(req.body)).digest('hex');
-            if (hash.toString() !== req.headers['x-paystack-signature'].toString()) {
-                return res.status(400).send('fuck you');
-            }
+          const whitelistedIps = ["3.139.45.191"];
+        const ip = req.headers['x-forwarded-for']?.split(',')[0].trim() || req.socket.remoteAddress;
+
+        if(!whitelistedIps.includes(ip)){
+            return res.status(400).end();
+        }
+
 
         try {
 
             const data = req.body;
 
             //Success response
-            if (data.event === "charge.success" || data.event === "transfer.success"){
-                await db('transactions').where('referenceNumber', data.data.reference)
-                    .update({status: 'successful'})
+            if (data?.status === "success"){
 
+                const userId = data.transaction_id.split('-')[1]; //Extract user id from transaction_id
+                const user = await db('users').where('id', userId)
+                    .select('id', 'balance')
+                    .limit(1);
 
-                  
-                if (data.data.metadata){
+                //Set status to success in transactions table
+                await db('transactions').where('referenceNumber', data.transaction_id)
+                    .update({status: 'success'})
 
-                    //Set user's first deposit to true
-                    if (data.data.metadata.first_deposit.toString() === '0'){
-                        await db('users').where({id: data.data.metadata.user_id})
-                            .update({firstDeposit: true});
-                    }
-                    //Set first deposit promo to active
-                    const amount = parseFloat(data.data.amount) / 100;
-                    if (data.data.metadata.first_deposit.toString() === '0' && amount >= 5){
-                        await db('userPromos').where({promoId: 1, userId: data.data.metadata.user_id})
-                            .update({active: true})
-                    }
-
+                if (user.length){
+                    //Insert into Transaction Logs table
+                    await db('transaction_logs')
+                        .insert({
+                            userId: user[0].id,
+                            type: 'deposit',
+                            amount: data.amount,
+                            oldBalance: user[0].balance,
+                            newBalance: user[0].balance + parseFloat(data.amount),
+                            transaction_id: data.transaction_id,
+                            description: "User Deposit",
+                            created_at: moment().format("YYYY-MM-DD HH:mm:ss"),
+                            updated_at: moment().format("YYYY-MM-DD HH:mm:ss")
+                        })
                 }
 
 
-
-                //failed response
-            }else if (data.event === "transfer.failed" || data.event === "transfer.reversed"){
-                await db('transactions').where('referenceNumber', data.data.reference)
-                    .update({status: 'failed'})
             }
 
+            //failed response
+             if (data?.status === "failed"){
+                await db('transactions').where('referenceNumber', data.transaction_id)
+                    .update({status: 'failed'})
+            }
 
             res.status(200).end();
 
         }catch (e) {
-            logger.error('admin, controllers indexController paystack');
+            logger.error('admin, controllers indexController payment webhook');
             logger.error(e)
             res.status(400).end();
         }

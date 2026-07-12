@@ -18,10 +18,10 @@ const userIndexController = {
 
             const data = await db.select( 'tickets.id','tickets.numbers', 'tickets.ticketDate',
                     'tickets.ticketStatus', 'tickets.amount',
-                'tickets.payable', 'winners.amountWon', 'machineNumbers.numbers as winningNumbers')
+                'tickets.payable', 'winners.amountWon', 'machine_numbers.numbers as winningNumbers')
                 .from('tickets')
                 .leftJoin('winners', 'winners.ticketId', 'tickets.id')
-                .leftJoin('machineNumbers', 'machineNumbers.drawDate', 'tickets.ticketDate')
+                .leftJoin('machine_numbers', 'machine_numbers.drawDate', 'tickets.ticketDate')
                 .where('tickets.userId', req.user.id)
                 .limit(pageSize)
                 .offset((page - 1) * pageSize)
@@ -35,7 +35,8 @@ const userIndexController = {
                 data,
                 page,
                 pageSize,
-                totalRecords: total[0].total
+                totalRecords: total[0].total,
+                balance: req.user.balance,
             });
 
         }catch (e) {

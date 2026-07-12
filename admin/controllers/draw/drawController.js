@@ -2,6 +2,7 @@ const db = require("../../../config/db");
 const { calculateWinnings } = require("../../../functions/index");
 const logger = require("../../../winston");
 const moment = require("moment");
+const {generateReferenceNumber} = require("../../../functions");
 
 const drawController = {
 
@@ -12,7 +13,7 @@ const drawController = {
             const pageSize = req.query.pageSize || 10;
 
 
-            const drawNumbers = await db.raw(`SELECT SQL_CALC_FOUND_ROWS * FROM machineNumbers
+            const drawNumbers = await db.raw(`SELECT SQL_CALC_FOUND_ROWS * FROM machine_numbers
                                     ORDER BY id DESC LIMIT ${pageSize} OFFSET ${(page - 1) * pageSize}`)
 
             const [total] = await db.raw('SELECT FOUND_ROWS() as total');
@@ -62,7 +63,7 @@ const drawController = {
         if (machineNumbers.length !== 5) return res.status(400).send("Machine numbers must be 5");
 
         try {
-            await db('machineNumbers').insert({
+            await db('machine_numbers').insert({
                 drawDate: date ? date : moment().format("YYYY-MM-DD"),
                 numbers: JSON.stringify(drawNumbers),
                 machineNumbers: JSON.stringify(machineNumbers)
@@ -107,7 +108,7 @@ const drawController = {
         if (machineNumbers.length !== 5) return res.status(400).send("Machine numbers must be 5");
 
         try {
-            await db('machineNumbers').where('id', id)
+            await db('machine_numbers').where('id', id)
                 .update({
                     numbers: JSON.stringify(drawNumbers),
                     machineNumbers: JSON.stringify(machineNumbers)
@@ -126,7 +127,7 @@ const drawController = {
     //delete draw
     destroy: async (req, res) => {
         try {
-            await db('machineNumbers').where('id', req.body.id).del();
+            await db('machine_numbers').where('id', req.body.id).del();
             return res.status(200).end();
         }catch (e) {
             logger.error('admin, controllers drawController destroy');
@@ -146,7 +147,8 @@ const drawController = {
             await db.transaction(async trx => {
 
                 //query draw numbers
-                const queryDrawNumbers = await trx('machineNumbers').where({id}).limit(1);
+                const queryDrawNumbers = await trx('machine_numbers').where({id}).limit(1);
+
 
                 //if draw numbers not found
                 if (!queryDrawNumbers.length) return res.status(400).send("Sorry selected draw was not found");
@@ -154,6 +156,12 @@ const drawController = {
                 if (queryDrawNumbers[0].closed) return res.status(400).send("Sorry draw is closed already");
 
                 let drawNumbers = JSON.parse(queryDrawNumbers[0].numbers);
+
+                //check if draw date is greater than today
+                const dateToCheck = moment(queryDrawNumbers[0].drawDate);
+                if (dateToCheck.isAfter(moment().format("YYYY-MM-DD"), 'day')) {
+                    return res.status(400).send("Sorry future draw cannot be performed today");
+                }
 
                 //query draw tickets
                 const tickets = await trx('tickets')
@@ -163,7 +171,7 @@ const drawController = {
 
                 //If no tickets were found
                 if (!tickets.length){
-                    await trx('machineNumbers').where({id}).update({closed: true});
+                    await trx('machine_numbers').where({id}).update({closed: true});
                     return res.status(200).end();
                 }
 
@@ -172,8 +180,10 @@ const drawController = {
                     return ticket.numbers = JSON.parse(ticket.numbers);
                 })
 
-                //declare winning numbers array
+                //declare winners array
                 const winners = [];
+                //Array for transaction logs(update old user balance and new balance)
+                const forLogs = [];
 
                 for (let ticket of tickets){
 
@@ -188,6 +198,7 @@ const drawController = {
                         delete ticket.amount;
                         delete  ticket.payable;
                         winners.push(ticket);
+                        forLogs.push({userId:ticket.userId, amountWon: ticket.amountWon});
                     }
 
                 }
@@ -199,17 +210,53 @@ const drawController = {
                     ids.push(ticket.ticketId);
                 }
 
-                //batch insert into winnings table
-                await trx.batchInsert('winners', winners, 30);
-
 
                 //Update all ticket status to closed
                 await trx('tickets').whereIn('id', ids)
                     .update({ticketStatus: 'closed'});
 
                 //close draw
-                await trx('machineNumbers').where({id}).update({closed: true});
+                await trx('machine_numbers').where({id}).update({closed: true});
 
+                //get all users IDs that won
+                const winnersIDs = [];
+                for (let log of forLogs)winnersIDs.push(log.userId);
+
+                //Query users for their balances (will be oldBalance in transaction logs)
+                const userBalances = await trx('users')
+                    .whereIn("id", winnersIDs)
+                    .select("id", "balance")
+
+
+                //batch insert into winnings table
+                await trx.batchInsert('winners', winners, 30);
+
+
+
+                //If data was found
+                if (userBalances.length > 0){
+                    const dataForTransactionLogs = [];
+                    for (let log of forLogs){
+                        for (let ub of userBalances){
+                            if (ub.id === log.userId){
+                                dataForTransactionLogs.push({
+                                    userId:log.userId,
+                                    type: "winnings",
+                                    amount: log.amountWon,
+                                    oldBalance: ub.balance,
+                                    newBalance: parseFloat(log.amountWon) + parseFloat(ub.balance),
+                                    transaction_id: generateReferenceNumber() + `${ub.id}W`,
+                                    description: "Ticket Winning",
+                                    created_at: moment().format("YYYY-MM-DD HH:mm:ss"),
+                                    updated_at: moment().format("YYYY-MM-DD HH:mm:ss")
+                                });
+                            }
+                        }
+                    }
+
+                    //batch insert into transaction logs table
+                    await trx.batchInsert('transaction_logs', dataForTransactionLogs, 30);
+                }
 
                 return res.status(200).end();
 

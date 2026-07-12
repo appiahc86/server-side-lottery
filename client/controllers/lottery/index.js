@@ -12,15 +12,26 @@ const lotteryController = {
 
             let today = moment();
             let currentHour = today.hours();
+            let todayDrawPerformed = false;
 
-            //Close the game between 7 pm and 8pm
-            if (currentHour >= 19 && currentHour < 20) {
+            //check if draw is performed
+            const drawNumbers = await db('machine_numbers').orderBy('id', 'desc').limit(1);
+            if (drawNumbers.length > 0){
+                // if today's draw is performed
+                if(moment(drawNumbers[0].drawDate).format("YYYY-MM-DD") ===
+                    today.format("YYYY-MM-DD") && drawNumbers[0].closed)
+                    todayDrawPerformed = true;
+            }
+
+
+            //Close the game between 7 pm and 8pm if today's draw is not performed.
+            if (currentHour >= 19 && currentHour < 20 && todayDrawPerformed === false) {
                 return res.status(400).send("Sorry, game is closed. Please come back after 8pm");
             }
 
 
             //Open the game for tomorrow
-            if (currentHour >= 20 ){
+            if (currentHour >= 20 || !!todayDrawPerformed){
                today = moment().add(1, 'days')
             }
 
@@ -33,12 +44,12 @@ const lotteryController = {
 
 
                                         // ..........validation..............
-            if (!req.body.amountToStake || req.amountToStake < 1) return res.status(400).send("Amount should be at least GHS 1");
+            if (!req.body.amountToStake) return res.status(400).send("Please enter amount to stake");
             if (req.body.selectedNumbers.length < 2) return res.status(400).send("Please Select at least two numbers");
 
             let testDuplicates = [];
             for (const number of req.body.selectedNumbers){
-                if (typeof number !== "number") return res.status(400).send("You data is invalid");
+                if (typeof number !== "number") return res.status(400).send("Your data is invalid");
                 if (number < 1 || number > 90) return res.status(400).send("number should be from 1 to 90");
                 if (testDuplicates.includes(number)) return res.status(400).send("You cannot select same number twice");
                 testDuplicates.push(number);
@@ -47,35 +58,27 @@ const lotteryController = {
 
             //calculate payable
             const payable = stakeFunction(req.body.selectedNumbers.length, req.body.amountToStake);
+            if (!payable || payable < 1) return res.status(400).send("Payable should be at least GHS 1");
 
             //if payable is less than 1
             if (payable < 1) return res.status(400).send("Minimum amount should be 1");
 
 
-          //Check if user has promo
-            let bonus = 0;
-            if (req.body.promo){
-                let query = await db('userPromos').where({id: req.body.promo}).select('amount').limit(1);
-                bonus = query[0] ? parseFloat(query[0].amount) : 0;
-            }
-
-
             //user's balance
             const balance = parseFloat(req.user.balance);
 
-            //If bonus plus balance is less than payable
-            if ((balance + bonus) < payable) return res.status(400).send("Your balance is not sufficient");
-
-            //if user has bonus and stakes less than or equal to bonus
-            if (bonus && payable <= bonus){
-                return res.status(400).send("First stake must exceed your bonus");
-            }
+            //If balance is less than payable
+            if (balance < payable) return res.status(400).send("You do not have enough balance");
 
 
             let ticketId = null;
-            let bonusLeft = 0; //bonus left after deduction. will be sent as response payload
 
             await db.transaction(async trx => {
+
+                const user = await trx('users').where('id', req.user.id)
+                    .limit(1).forUpdate();
+
+
                 //Insert into tickets table
                 let newTicket = await trx("tickets").insert({
                     userId: req.user.id,
@@ -83,54 +86,40 @@ const lotteryController = {
                     amount: req.body.amountToStake,
                     payable: payable,
                     ticketDate: today.format("YYYY-MM-DD"),
-                    createdAt: moment().format("YYYY-MM-DD HH:mm:ss")
+                    created_at: moment().format("YYYY-MM-DD HH:mm:ss")
                 })
 
                 ticketId = newTicket[0];
 
+                const newBalance = user[0].balance - payable;
 
+                    //Debit account balance
 
-                if (bonus >= payable){ // If bonus is greater than or equal to payable
-
-                    // Pay with bonus
-                    await trx('userPromos').where('id', req.body.promo)
-                        .decrement('amount', payable)
-                    bonusLeft = bonus - payable;
-
-                }else if (bonus > 0 && bonus < payable){ //if bonus > 0 and less than payable
-
-                    //Pay with bonus and user's balance
-                    await trx('userPromos').where('id', req.body.promo)
-                        .update({amount: 0})
-                    const amountToDeduct = payable - bonus;
-                    await trx('users').where('id', req.user.id)
-                        .decrement("balance", amountToDeduct)
-                    req.user.balance = parseFloat(req.user.balance) - amountToDeduct;
-
-                }else { //if No bonus
-
-                    //Pay witn user's account balance
                     await trx("users").where("id", req.user.id)
-                        .decrement("balance", payable)
-                    req.user.balance = parseFloat(req.user.balance) - payable;
+                        .update("balance", newBalance)
 
-                }
+
+                    req.user.balance = newBalance;
+
+
 
                 //insert into transaction logs table
-                // await trx("transactionLogs").insert({
-                //     userId: req.user.id,
-                //     type: "stake",
-                //     amount: payable,
-                //     oldBalance: req.user.balance,
-                //     newBalance: parseFloat( req.user.balance) - payable,
-                //     date: moment().format("YYYY-MM-DD"),
-                //     createdAt: moment().format("YYYY-MM-DD HH:mm:ss")
-                // })
+                await trx("transaction_logs").insert({
+                    userId: req.user.id,
+                    type: "stake",
+                    amount: payable,
+                    oldBalance: user[0].balance,
+                    newBalance: newBalance,
+                    transaction_id: ticketId,
+                    description: "Ticket Purchase",
+                    created_at: moment().format("YYYY-MM-DD HH:mm:ss"),
+                    updated_at: moment().format("YYYY-MM-DD HH:mm:ss")
+                })
 
             }) // ./end of db transaction
 
 
-            res.status(201).send({bonusLeft, balance: req.user.balance});
+            res.status(201).send({balance: req.user.balance});
 
             // Send real time to client users
             if (currentHour < 19 ){
@@ -140,7 +129,7 @@ const lotteryController = {
                     numbers: JSON.stringify(req.body.selectedNumbers),
                     amount: req.body.amountToStake,
                     payable,
-                    createdAt: moment()
+                    created_at: moment()
                 })
             }else{
                    req.io.to('admin-users').emit('tomorrow-tickets', {

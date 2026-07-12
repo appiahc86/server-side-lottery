@@ -10,5 +10,8 @@ router.get("/", auth, clientUsersController.index);
 //Search for a user
 router.post("/search", auth, clientUsersController.search);
 
+//Get user's Logs
+router.post("/logs", auth, clientUsersController.getUserLogs);
+
 
 module.exports = router;

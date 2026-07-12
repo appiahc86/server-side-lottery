@@ -6,12 +6,17 @@ const moment = require("moment");
 
 const indexController = {
     //get images
-    getImages: async (req, res) => {
+    index: async (req, res) => {
+
+        logger.info(req.ip);
+
         try{
             let images = [];
             const query = await db.raw(`SELECT JSON_EXTRACT(list, '$[0]', '$[1]', '$[2]') as images FROM images;`);
 
             images =  JSON.parse(query[0][0].images) || [];
+            let todayDrawPerformed = false;
+            const today = moment().format("YYYY-MM-DD");
 
             const gameStatus = await db('settings').select('gameStatus')
                 .where('id', 1)
@@ -24,52 +29,30 @@ const indexController = {
                 })
             }
 
-            res.status(200).send({images, date: moment(), gameStatus: gameStatus[0].gameStatus});
+            const drawNumbers = await db('machine_numbers')
+                .select("numbers", "drawDate", "closed")
+                .orderBy('id', 'desc').limit(1);
+           if (drawNumbers.length > 0){
+               // if today's draw is performed
+               if(moment(drawNumbers[0].drawDate).format("YYYY-MM-DD") === today && drawNumbers[0].closed)
+                todayDrawPerformed = true;
+           }
+
+            // console.log(todayDrawPerformed)
+            res.status(200).send({
+                images,
+                date: moment(),
+                gameStatus: gameStatus[0].gameStatus,
+                todayDrawPerformed,
+                gameResults: drawNumbers,
+                balance: req?.user?.balance
+            });
         }catch (e) {
-            logger.error('client, index controller getImages');
+            res.status(400).send('Sorry, Error Occurred');
+            logger.error('client, index controller');
             logger.error(e);
-            return res.status(204).end();
         }
-    }, // ./getImages
-
-    //get game results
-    getGameResults: async (req, res) => {
-        try {
-            const query = await db('machineNumbers').select('drawDate', 'numbers')
-                .orderBy('id', 'DESC').limit(1);
-
-            res.status(200).send({gameResults: query, date: moment()});
-
-        }catch (e) {
-            logger.error('client, index controller getGameResults');
-            logger.error(e);
-            return res.status(400).send('Sorry, Could not get game results');
-        }
-    }, //./getGameResults
-
-
-    //Get user promos
-    getUserPromos: async (req, res) => {
-        try {
-            const promos = await db('userPromos')
-                .where({userId: req.user.id, promoId: 1})
-                .limit(1);
-
-
-            if (promos.length && promos[0].active && promos[0].amount > 0){
-                return res.status(200).send({promos: promos[0], balance: req.user.balance});
-            }
-
-            return res.status(200).send({promos: null, balance: req.user.balance});
-
-        }catch (e) {
-            logger.error('client, index controller getUserPromos');
-            logger.error(e);
-            return res.status(204).end();
-        }
-    } //./getUserPromos
-
-
+    }
 }
 
 

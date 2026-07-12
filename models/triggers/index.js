@@ -1,9 +1,10 @@
-const {updateBalanceTrigger} = require("./transactionTrigger");
+const {withdrawalTrigger} = require('./withdrawalTrigger');
 const { winnersTrigger } = require("./winnersTrigger");
+const {depositTrigger} = require("./depositTrigger");
 
 
 const triggers =  [
-    updateBalanceTrigger, winnersTrigger
+    withdrawalTrigger, depositTrigger, winnersTrigger
 ]
 
 const runTriggers = async () => {

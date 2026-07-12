@@ -1,69 +1,102 @@
-const cron = require('cron');
-const db = require("./config/db");
-const config = require("./config/config");
-const axios = require("axios");
+const axios = require('axios');
+const db = require('./config/db');
+const config = require('./config/config');
 const logger = require('./winston');
+const moment = require("moment/moment");
 
-const transactionJob = new cron.CronJob('*/3 * * * *', async () => { // This function will be executed every 3 minutes
+/**
+ * Poll pending deposits
+ */
+async function pollPendingDeposits() {
     try {
-        //Get pending transactions from db
-        const pending = await db('transactions')
-            .select('id', 'referenceNumber', 'transactionType')
-            .where('status', 'pending').limit(8);
 
-        //If pending transactions found
-        if (pending.length){
+        // Get all pending deposits from the last 24 hours
+        const deposits = await db('transactions')
+            .where('status', 'pending')
+            .where('transactionType', 'deposit')
+            .where('created_at', '>=', db.raw('DATE_SUB(NOW(), INTERVAL 24 HOUR)'))
+            .select('referenceNumber', 'amount', 'userId');
 
-            for (const pend of pending){
-                // Verify each status from paystack
-                let url = `https://api.paystack.co/transaction/verify/${pend.referenceNumber}`;
-                if (pend.transactionType === 'withdrawal'){
-                    url = `https://api.paystack.co/transfer/verify/${pend.referenceNumber}`;
-                }
-                const response = await axios.get(url,
+        if (!deposits.length) return;
+
+        // Verify each pending deposit
+        for (const deposit of deposits) {
+            try {
+
+                // Verify with payment API
+                const response = await  axios.get(
+                    `https://api.bulkclix.com/api/v1/payment-api/checkstatus/${deposit.referenceNumber}`,
+
                     {
-                        headers: {'Authorization': `Bearer ${config.PAYSTACK_SECRET_KEY}`}
-                    }
-                );
-
-                //if successful transaction
-                if (response.data.status === true && response.data.data.status === 'success'){
-                    await db('transactions').where('id', pend.id).update({status: 'successful'});
-
-                    const amount = parseFloat(response.data.data.amount) / 100;
-
-                    if (response.data.data.metadata){
-
-                        //Set user's first deposit to true
-                        if (response.data.data.metadata.first_deposit.toString() === '0'){
-                            await db('users').where({id: response.data.data.metadata.user_id})
-                                .update({firstDeposit: true});
+                        headers: {
+                            'x-api-key': `${config.PAYMENT_API_KEY}`
                         }
-                        //Set first deposit promo to active
-                        if (response.data.data.metadata.first_deposit.toString() === '0' && amount >= 5){
-                            await db('userPromos').where({promoId: 1, userId: response.data.data.metadata.user_id})
-                                .update({active: true})
-                        }
-
                     }
+                )
 
+
+                if (response.status === 200) {  //if api returns 200 status
+
+                     //check status and update database
+                    if (response?.data?.data?.status === "success") { //if status is success
+                        await db('transactions')
+                            .where("referenceNumber", deposit.referenceNumber)
+                            .update({status: "success"})
+                        //Get users old balance for transaction logs
+                        const user = await db("users")
+                            .where("id", deposit.userId)
+                            .select("id", "balance")
+                            .limit(1)
+                        if (user.length){
+                            //Save to transaction logs
+                            await db('transaction_logs')
+                                .insert({
+                                    userId: user[0].id,
+                                    type: "deposit",
+                                    amount: deposit.amount,
+                                    oldBalance: user[0].balance,
+                                    newBalance: parseFloat(user[0].balance) + parseFloat(deposit.amount),
+                                    transaction_id: deposit.referenceNumber,
+                                    description: "User Deposit",
+                                    created_at: moment().format("YYYY-MM-DD HH:mm:ss"),
+                                    updated_at: moment().format("YYYY-MM-DD HH:mm:ss")
+                                })
+                        }
+                    } // ./success status
+
+                    if (response?.data?.data?.status  === "failed") { //if status is failed
+                        await db('transactions')
+                            .where("referenceNumber", deposit.referenceNumber)
+                            .update({status: "failed"})
+                    }
 
                 }
-                //if transaction fails
-                else if(response.data.status === true && response.data.data.status === 'failed' ){
-                    await db('transactions').where('id', pend.id).update({status: 'failed'})
+
+                // Add a small delay to avoid hitting rate limits
+                await new Promise(resolve => setTimeout(resolve, 500));
+
+            } catch (error) {
+                if (error.code === "ER_DUP_ENTRY") logger.error("transaction log created already")
+                else {
+                    logger.error(`Error verifying deposit  ${deposit.referenceNumber}:`, {
+                        error: error.response?.data || error.message,
+                    });
                 }
 
-            } //./for of loop
+            }
+        }
 
-        } //.If pending transactions found
 
-    }catch (e) {
-        logger.info('cron job')
-        logger.info(e);
+
+    } catch (error) {
+        logger.error('Error in payment  polling service:', {
+            error: error.message,
+            stack: error.stack
+        });
+        throw error;
     }
+}
 
-});
-
-
-module.exports = transactionJob;
+module.exports = {
+    pollPendingDeposits
+};

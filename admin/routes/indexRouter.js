@@ -8,6 +8,6 @@ const auth = require("../middleware/auth");
 router.get('/sms-balance', indexController.getSmsBalance);
 
 
-//paystack
-router.post('/webhook', indexController.paystack);
+//Payment Webhook
+router.post('/webhook', indexController.paymentWebhook);
 module.exports = router;

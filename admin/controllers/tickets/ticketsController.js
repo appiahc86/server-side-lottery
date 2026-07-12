@@ -7,12 +7,12 @@ const ticketsController = {
     //get tickets
     currentTickets: async (req, res) => {
 
-            const { day } = req.body;
-            let queryDate = day === 'today' ? moment().format("YYYY-MM-DD") : moment().add(1, 'days').format("YYYY-MM-DD");
+        const { day } = req.body;
+        let queryDate = day === 'today' ? moment().format("YYYY-MM-DD") : moment().add(1, 'days').format("YYYY-MM-DD");
 
         try {
             const tickets = await db.select('tickets.id', 'users.phone as user', 'tickets.amount',
-                'tickets.numbers', 'tickets.createdAt', 'tickets.payable')
+                'tickets.numbers', 'tickets.recorded', 'tickets.created_at', 'tickets.payable')
                 .from('tickets')
                 .join('users', 'users.id', 'tickets.userId')
                 .where('tickets.ticketDate', queryDate)
@@ -34,7 +34,7 @@ const ticketsController = {
             const { date } = req.body;
 
             const tickets = await db.select('tickets.id', 'users.phone as user', 'tickets.amount',
-                'tickets.numbers', 'tickets.createdAt', 'tickets.payable')
+                'tickets.numbers', 'tickets.created_at', 'tickets.payable')
                 .from('tickets')
                 .join('users', 'users.id', 'tickets.userId')
                 .where('tickets.ticketDate', date)
@@ -48,8 +48,9 @@ const ticketsController = {
         }
     },
 
+
+
     //Get winners for a particular date
-    //Search Tickets by date
     getWinners: async (req, res) => {
 
         try {
@@ -63,7 +64,7 @@ const ticketsController = {
                 .whereRaw('?? = ?', ['winners.ticketDate', date]);
 
             const winningNumbers = await db.select('numbers')
-                .from('machineNumbers')
+                .from('machine_numbers')
                 .whereRaw('?? = ?', ['drawDate', date]);
 
 
@@ -73,8 +74,49 @@ const ticketsController = {
             });
 
         }catch (e) {
+            logger.error("admin/controllers/tickets getWinners");
             logger.error(e);
             return res.status(400).send("Could not fetch tickets")
+        }
+    },
+
+
+    //Printout Tickets
+    printOut: async (req, res) => {
+
+        const { date } = req.body;
+
+        try {
+            const tickets = await db.select('tickets.id', 'users.phone as user', 'tickets.amount',
+                'tickets.numbers',  'tickets.created_at', 'tickets.payable')
+                .from('tickets')
+                .join('users', 'users.id', 'tickets.userId')
+                .where('tickets.ticketDate', date)
+                .orderBy('tickets.id', 'ASC');
+
+            res.status(200).send(tickets);
+
+        }catch (e) {
+            logger.error(e);
+            logger.error("Admin controller tickets printout");
+            return res.status(400).send("Could not fetch tickets")
+        }
+
+    },
+
+
+    //Record Ticket
+    record: async (req, res) => {
+        try {
+
+            await db('tickets').where('id', req.body.id)
+                .update({recorded: true});
+            res.status(200).end();
+
+        }catch (e) {
+            logger.error("admin/controllers/tickets record");
+            logger.error(e);
+            return res.status(400).send("Request failed")
         }
     }
 

@@ -8,9 +8,15 @@ const ticketController = require("../../controllers/tickets/ticketsController")
 router.post('/current-tickets', auth, ticketController.currentTickets);
 
 //search Tickets by date
-router.post('/search-tickets', auth, ticketController.searchTickets)
+router.post('/search-tickets', auth, ticketController.searchTickets);
 
 //Get winners
-router.post('/winners', auth, ticketController.getWinners)
+router.post('/winners', auth, ticketController.getWinners);
+
+//Printout Tickets
+router.post('/print-out', auth, ticketController.printOut);
+
+//Record Ticket
+router.post('/record', auth, ticketController.record);
 
 module.exports = router;
