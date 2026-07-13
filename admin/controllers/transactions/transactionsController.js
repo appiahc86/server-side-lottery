@@ -15,7 +15,7 @@ const transactionsController = {
 
             const transactions = await db.select('users.phone',
                 'transactions.id','transactions.amount', 'transactions.status',
-                'transactions.referenceNumber', 'transactions.created_at',
+                'transactions.referenceNumber', 'transactions.transactionType','transactions.created_at',
                 db.raw('COUNT(*) OVER () as total'))
                 .from('transactions')
                 .leftJoin('users', 'users.id', 'transactions.userId')
