@@ -63,6 +63,8 @@ const userTransactions  = {
                     amount: parseFloat(amount),
                     chargesAmount: charges,
                     amountAfterCharges: parseFloat(amount) + parseFloat(charges),
+                    created_at: moment().format("YYYY-MM-DD HH:mm:ss"),
+                    updated_at: moment().format("YYYY-MM-DD HH:mm:ss")
                 })
 
 
@@ -191,6 +193,8 @@ const userTransactions  = {
                     amount: parseFloat(amount),
                     chargesAmount: 0,
                     amountAfterCharges: parseFloat(amount),
+                    created_at: moment().format("YYYY-MM-DD HH:mm:ss"),
+                    updated_at: moment().format("YYYY-MM-DD HH:mm:ss")
                 })
 
                 //Deduct amount from user's account balance
